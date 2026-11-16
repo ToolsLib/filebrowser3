@@ -1,0 +1,94 @@
+{
+  "reviewedCommit": "0f110fd",
+  "reviewDate": "2026-11-17",
+  "go": {
+    "toolchain": "go1.27.4",
+    "gomaxprocs": 2,
+    "benchtime": "150ms",
+    "windowsOutput": "goos: windows\r\ngoarch: amd64\r\npkg: github.com/filebrowser/filebrowser/v2/files\r\ncpu: AMD Ryzen 7 6800H with Radeon Graphics         \r\nBenchmarkPerformanceListing/text/100-2         \t    1660\t     96867 ns/op\t   92136 B/op\t     926 allocs/op\r\nBenchmarkPerformanceListing/text/1000-2        \t     202\t    863690 ns/op\t  907848 B/op\t    9032 allocs/op\r\nBenchmarkPerformanceListing/video/100-2        \t     277\t    775150 ns/op\t   92681 B/op\t     926 allocs/op\r\nBenchmarkPerformanceListing/video/1000-2       \t       3\t  52357000 ns/op\t  932725 B/op\t    9035 allocs/op\r\nBenchmarkPerformanceListing/video-subs/100-2   \t      13\t  13228723 ns/op\t 1269133 B/op\t   23433 allocs/op\r\nBenchmarkPerformanceListing/video-subs/1000-2  \t       1\t1378741000 ns/op\t102234240 B/op\t 2040102 allocs/op\r\nBenchmarkPerformanceNativeListing/files=100/resolve-checks=false-2         \t       1\t 185963700 ns/op\t 1435024 B/op\t   18147 allocs/op\r\nBenchmarkPerformanceNativeListing/files=100/resolve-checks=true-2          \t       1\t 230135300 ns/op\t 2533976 B/op\t   33856 allocs/op\r\nBenchmarkPerformanceNativeListing/files=1000/resolve-checks=false-2        \t       1\t1659952600 ns/op\t13554008 B/op\t  178347 allocs/op\r\nBenchmarkPerformanceNativeListing/files=1000/resolve-checks=true-2         \t       1\t2003013700 ns/op\t25119232 B/op\t  334483 allocs/op\r\nPASS\r\nok  \tgithub.com/filebrowser/filebrowser/v2/files\t7.378s\r\n",
+    "linuxOutput": "goos: linux\r\ngoarch: amd64\r\npkg: github.com/filebrowser/filebrowser/v2/files\r\ncpu: AMD Ryzen 7 6800H with Radeon Graphics         \r\nBenchmarkPerformanceListing/text/100-2         \t    2353\t     64894 ns/op\t   88938 B/op\t     724 allocs/op\r\nBenchmarkPerformanceListing/text/1000-2        \t     242\t    730894 ns/op\t  875848 B/op\t    7030 allocs/op\r\nBenchmarkPerformanceListing/video/100-2        \t     462\t    389296 ns/op\t   89267 B/op\t     724 allocs/op\r\nBenchmarkPerformanceListing/video/1000-2       \t       7\t  22691362 ns/op\t  886582 B/op\t    7032 allocs/op\r\nBenchmarkPerformanceListing/video-subs/100-2   \t      15\t  11545805 ns/op\t 1267253 B/op\t   23031 allocs/op\r\nBenchmarkPerformanceListing/video-subs/1000-2  \t       1\t1193128147 ns/op\t102193936 B/op\t 2036095 allocs/op\r\nBenchmarkPerformanceNativeListing/files=100/resolve-checks=false-2         \t      54\t   3301430 ns/op\t  508310 B/op\t    5995 allocs/op\r\nBenchmarkPerformanceNativeListing/files=100/resolve-checks=true-2          \t      33\t   5093895 ns/op\t  869533 B/op\t   10325 allocs/op\r\nBenchmarkPerformanceNativeListing/files=1000/resolve-checks=false-2        \t       5\t  34821951 ns/op\t 5019086 B/op\t   59105 allocs/op\r\nBenchmarkPerformanceNativeListing/files=1000/resolve-checks=true-2         \t       3\t  52472621 ns/op\t 8605594 B/op\t  102136 allocs/op\r\nPASS\r\nok  \tgithub.com/filebrowser/filebrowser/v2/files\t2.810s\r\n"
+  },
+  "browser": {
+    "environment": {
+      "platform": "win32",
+      "node": "v24.22.2",
+      "browser": "159.0.8154.6"
+    },
+    "api": [
+      {
+        "items": 200,
+        "medianMs": 522.8712,
+        "bytes": 39050,
+        "gzipBytes": 1530,
+        "encoding": "none"
+      },
+      {
+        "items": 2000,
+        "medianMs": 5049.7937,
+        "bytes": 389810,
+        "gzipBytes": 13607,
+        "encoding": "none"
+      }
+    ],
+    "listing": {
+      "initialRows": 82,
+      "afterScrollRows": 1072,
+      "totalItems": 2000,
+      "selectAllMs": 311.9012999999977,
+      "selectedRenderedRows": 1072
+    },
+    "csv": [
+      {
+        "rows": 1000,
+        "inputBytes": 17906,
+        "navigationToRowsMs": 241.63070000000153,
+        "domNodes": 9380,
+        "heapUsedBytes": 33493500,
+        "longTaskMs": []
+      },
+      {
+        "rows": 20000,
+        "inputBytes": 388906,
+        "navigationToRowsMs": 1953.8601000000017,
+        "domNodes": 180375,
+        "heapUsedBytes": 73854220,
+        "longTaskMs": [
+          194
+        ]
+      }
+    ],
+    "oversizedCsv": {
+      "downloadedBytes": 6000004,
+      "status": 200,
+      "inputBytes": 6000004,
+      "errorShown": 0,
+      "viewerText": "home\nkeyboard_arrow_right\ntoo-large.csv\nclose\ntoo-large.csv\nmode_editdeletefile_downloadinfo",
+      "pageErrors": []
+    }
+  },
+  "selection": {
+    "node": "v24.22.2",
+    "results": [
+      {
+        "items": 100,
+        "existingAllSelectedMedianMs": 1.328300000000013,
+        "setPrototypeAllSelectedMedianMs": 0.26400000000001,
+        "existingNoneSelectedMedianMs": 0.11910000000000309
+      },
+      {
+        "items": 1000,
+        "existingAllSelectedMedianMs": 149.59589999999992,
+        "setPrototypeAllSelectedMedianMs": 5.743599999999901,
+        "existingNoneSelectedMedianMs": 0.5249000000000024
+      },
+      {
+        "items": 3000,
+        "existingAllSelectedMedianMs": 608.7093,
+        "setPrototypeAllSelectedMedianMs": 7.6392000000000735,
+        "existingNoneSelectedMedianMs": 1.4731000000001586
+      }
+    ]
+  },
+  "thumbnailProbe": "=== RUN   TestPerformancePreviewColdConcurrency\r\n    performance_review_test.go:90: 8 simultaneous requests for one thumbnail invoked Resize 8 times\r\n--- PASS: TestPerformancePreviewColdConcurrency (0.00s)\r\nPASS\r\nok  \tgithub.com/filebrowser/filebrowser/v2/http\t0.187s\r\n",
+  "cpuProfileTop": "File: files.test.exe\r\nType: cpu\r\nTime: 2026-11-17 00:34:30 CET\r\nDuration: 2.58s, Total samples = 2570ms (99.65%)\r\nShowing nodes accounting for 1920ms, 74.71% of 2570ms total\r\nDropped 25 nodes (cum <= 12.85ms)\r\nShowing top 10 nodes out of 93\r\n      flat  flat%   sum%        cum   cum%\r\n     630ms 24.51% 24.51%     1630ms 63.42%  regexp.(*Regexp).tryBacktrack\r\n     300ms 11.67% 36.19%      300ms 11.67%  regexp.(*bitState).shouldVisit (inline)\r\n     270ms 10.51% 46.69%      540ms 21.01%  regexp/syntax.(*Inst).MatchRunePos\r\n     270ms 10.51% 57.20%      270ms 10.51%  unicode.SimpleFold\r\n     100ms  3.89% 61.09%      140ms  5.45%  regexp.(*bitState).push (inline)\r\n      90ms  3.50% 64.59%      140ms  5.45%  internal/filepathlite.volumeNameLen\r\n      90ms  3.50% 68.09%       90ms  3.50%  regexp.(*inputString).step\r\n      80ms  3.11% 71.21%      390ms 15.18%  github.com/spf13/afero/mem.(*FileInfo).Name\r\n      50ms  1.95% 73.15%      300ms 11.67%  internal/filepathlite.Split\r\n      40ms  1.56% 74.71%       40ms  1.56%  cmpbody\r\n"
+}
