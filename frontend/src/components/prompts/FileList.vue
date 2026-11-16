@@ -5,6 +5,8 @@
         @click="itemClick"
         @touchstart="touchstart"
         @dblclick="next"
+        @keydown.enter.prevent="next"
+        @keydown.space.prevent="select"
         role="button"
         tabindex="0"
         :aria-label="item.name"

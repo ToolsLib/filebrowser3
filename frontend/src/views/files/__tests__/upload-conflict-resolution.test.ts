@@ -50,7 +50,6 @@ vi.mock("@/utils/upload", () => ({
   scanFiles: harness.scanFiles,
   handleFiles: harness.handleFiles,
 }));
-vi.mock("@/utils/css", () => ({ default: vi.fn() }));
 // Reaches document.querySelector, which the node test environment lacks.
 vi.mock("@/utils/buttons", () => ({
   default: { loading: vi.fn(), done: vi.fn(), success: vi.fn() },

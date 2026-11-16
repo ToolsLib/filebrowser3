@@ -14,7 +14,6 @@
         class="button button--flat button--grey"
         :aria-label="$t('buttons.cancel')"
         :title="$t('buttons.cancel')"
-        tabindex="2"
       >
         {{ $t("buttons.cancel") }}
       </button>
@@ -24,7 +23,6 @@
         class="button button--flat button--red"
         :aria-label="$t('buttons.delete')"
         :title="$t('buttons.delete')"
-        tabindex="1"
       >
         {{ $t("buttons.delete") }}
       </button>

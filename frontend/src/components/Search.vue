@@ -16,6 +16,7 @@
         type="text"
         @keyup.exact="keyup"
         @keyup.enter="submit"
+        @keydown.esc.prevent.stop="layoutStore.closeHovers()"
         ref="input"
         :autofocus="active"
         v-model.trim="prompt"
@@ -42,17 +43,16 @@
             <div class="boxes">
               <h3>{{ $t("search.types") }}</h3>
               <div>
-                <div
-                  tabindex="0"
+                <button
+                  type="button"
                   v-for="(v, k) in boxes"
                   :key="k"
-                  role="button"
                   @click="init('type:' + k)"
                   :aria-label="$t('search.' + v.label)"
                 >
                   <i class="material-icons">{{ v.icon }}</i>
                   <p>{{ $t("search." + v.label) }}</p>
-                </div>
+                </button>
               </div>
             </div>
           </template>

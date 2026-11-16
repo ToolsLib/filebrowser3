@@ -305,5 +305,19 @@
     "minutes": "Minutes",
     "seconds": "Seconds",
     "unit": "Time Unit"
+  },
+  "ui": {
+    "navigation": "Main navigation",
+    "workspace": "Workspace",
+    "storage": "Storage",
+    "itemCount": "{count} item | {count} items",
+    "emptyTitle": "This folder is empty",
+    "emptyHint": "Drop files here or upload them to get started.",
+    "emptyReadOnly": "Files added to this folder will appear here.",
+    "settingsHint": "Manage your preferences, sharing and workspace.",
+    "loginHint": "Your files, one simple workspace.",
+    "shareDurationHint": "Use 0 for a link that does not expire.",
+    "qrCode": "Show QR code",
+    "defaultTheme": "Automatic (match appearance)"
   }
 }

@@ -1,74 +1,77 @@
 #login {
-  background: var(--surfacePrimary);
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  overflow-y: auto;
+  padding: 32px 20px;
 }
-
-#login img {
-  width: 4em;
-  height: 4em;
-  margin: 0 auto;
-  display: block;
-}
-
-#login h1 {
-  text-align: center;
-  font-size: 2.5em;
-  margin: 0.4em 0 0.67em;
-}
-
 #login form {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  max-width: 16em;
-  width: 90%;
+  width: 100%;
+  max-width: 380px;
+  background: var(--surfacePrimary);
+  border: 1px solid var(--borderPrimary);
+  border-radius: 16px;
+  padding: 36px;
+  margin: auto;
 }
-
-#login.recaptcha form {
-  min-width: 304px;
+#login img {
+  width: 40px;
+  height: 40px;
+  display: block;
+  margin-bottom: 24px;
 }
-
-#login #recaptcha {
-  margin: 0.5em 0 0;
+#login h1 {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+  margin: 0 0 8px;
 }
-
-#login .wrong {
-  background: var(--red);
-  color: #fff;
-  padding: 0.5em;
-  text-align: center;
-  animation: 0.2s opac forwards;
+#login .login-subtitle {
+  color: var(--textPrimary);
+  font-size: 14px;
+  margin: 0 0 28px;
 }
-
+#login label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+#login .input {
+  min-height: 44px;
+  margin-bottom: 20px;
+}
+#login .button {
+  min-height: 44px;
+  margin: 8px 0 0;
+  font-weight: 600;
+}
+#login .wrong,
 #login .logout-message {
-  background: var(--icon-orange);
-  color: #fff;
-  padding: 0.5em;
-  text-align: center;
-  animation: 0.2s opac forwards;
-  text-transform: none;
+  background: var(--input-red);
+  color: var(--dark-red);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 20px;
+  font-size: 13px;
 }
-
-@keyframes opac {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
+#login #recaptcha {
+  margin-bottom: 16px;
 }
-
-#login p {
-  cursor: pointer;
-  text-align: right;
-  color: var(--blue);
-  text-transform: lowercase;
-  font-weight: 500;
-  font-size: 0.9rem;
-  margin: 0.5rem 0;
+#login.recaptcha form {
+  max-width: 400px;
+}
+#login .signup-toggle {
+  display: block;
+  margin: 20px auto 0;
+  font-size: 13px;
+}
+@media (max-width: 450px) {
+  #login form {
+    padding: 28px 20px;
+  }
 }

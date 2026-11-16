@@ -1,6 +1,6 @@
 <template>
   <div>
-    <header-bar showMenu showLogo>
+    <header-bar :showMenu="authStore.isLoggedIn" showLogo>
       <title />
 
       <action
@@ -20,6 +20,7 @@
         <i class="material-icons">content_paste</i>
       </button>
       <action
+        v-if="req?.isDir"
         icon="check_circle"
         :label="t('buttons.selectMultiple')"
         @action="toggleMultipleSelection"
@@ -74,80 +75,62 @@
       <errors v-else :errorCode="error.status" />
     </div>
     <div v-else-if="req !== null">
-      <div class="share">
-        <div
-          class="share__box share__box__info"
-          style="
-            position: -webkit-sticky;
-            position: sticky;
-            top: -20.6em;
-            z-index: 999;
-          "
-        >
-          <div class="share__box__header" style="height: 3em">
-            {{
-              req.isDir
-                ? t("download.downloadFolder")
-                : t("download.downloadFile")
-            }}
-          </div>
-          <div
-            v-if="!req.isDir"
-            class="share__box__element share__box__center share__box__icon"
+      <section v-if="!req.isDir" class="shared-file">
+        <div class="shared-file-icon">
+          <i class="material-icons" aria-hidden="true">{{ icon }}</i>
+        </div>
+        <p class="shared-file-eyebrow">{{ t("download.downloadFile") }}</p>
+        <h1>{{ req.name }}</h1>
+        <p class="shared-file-meta">
+          {{ humanSize }} <span aria-hidden="true">·</span>
+          <time :title="modTime">{{ humanTime }}</time>
+        </p>
+        <div class="shared-file-actions">
+          <a :href="link" class="button"
+            ><i class="material-icons" aria-hidden="true">file_download</i
+            >{{ t("buttons.download") }}</a
           >
-            <i class="material-icons">{{ icon }}</i>
+          <a
+            :href="inlineLink"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="button button--flat"
+            ><i class="material-icons" aria-hidden="true">open_in_new</i
+            >{{ t("buttons.openFile") }}</a
+          >
+        </div>
+        <details class="share-qr">
+          <summary>{{ t("ui.qrCode") }}</summary>
+          <qrcode-vue :value="link" :size="160" level="M" />
+        </details>
+      </section>
+      <div v-else class="share">
+        <div class="share__box share__box__info">
+          <div class="share__box__header">
+            {{ t("download.downloadFolder") }}
           </div>
-          <div class="share__box__element" style="height: 3em">
-            <strong>{{ $t("prompts.displayName") }}</strong> {{ req.name }}
+          <div class="share__box__element">
+            <strong>{{ t("prompts.displayName") }}</strong> {{ req.name }}
           </div>
-          <div v-if="!req.isDir" class="share__box__element" :title="modTime">
-            <strong>{{ $t("prompts.lastModified") }}:</strong> {{ humanTime }}
-          </div>
-          <div class="share__box__element" style="height: 3em">
-            <strong>{{ $t("prompts.size") }}:</strong> {{ humanSize }}
+          <div class="share__box__element">
+            {{ t("ui.itemCount", req.items.length) }}
           </div>
           <div class="share__box__element share__box__center">
-            <a
-              target="_blank"
-              :href="link"
-              class="button button--flat"
-              style="height: 4em"
-            >
-              <div>
-                <i class="material-icons">file_download</i
-                >{{ t("buttons.download") }}
-              </div>
-            </a>
-            <a
-              target="_blank"
-              :href="inlineLink"
-              class="button button--flat"
-              v-if="!req.isDir"
-            >
-              <div>
-                <i class="material-icons">open_in_new</i
-                >{{ t("buttons.openFile") }}
-              </div>
-            </a>
-            <qrcode-vue
-              v-if="req.isDir"
-              :value="link"
-              :size="100"
-              level="M"
-            ></qrcode-vue>
-          </div>
-          <div v-if="!req.isDir" class="share__box__element share__box__center">
-            <qrcode-vue :value="link" :size="200" level="M"></qrcode-vue>
+            <a :href="link" class="button">{{ t("buttons.download") }}</a>
+            <details class="share-qr">
+              <summary>{{ t("ui.qrCode") }}</summary>
+              <qrcode-vue :value="link" :size="120" level="M" />
+            </details>
           </div>
           <div
-            v-if="req.isDir"
+            v-if="fileStore.selectedCount === 1"
             class="share__box__element share__box__header"
             style="height: 3em"
           >
             {{ $t("sidebar.preview") }}
           </div>
           <div
-            v-if="req.isDir"
+            v-if="fileStore.selectedCount === 1"
             class="share__box__element share__box__center share__box__icon"
             style="padding: 0em !important; height: 12em !important"
           >
@@ -247,7 +230,7 @@
           <div id="listing" class="list file-icons">
             <item
               v-for="item in req.items.slice(0, showLimit)"
-              :key="base64(item.name)"
+              :key="item.name"
               v-bind:index="item.index"
               v-bind:name="item.name"
               v-bind:isDir="item.isDir"
@@ -304,7 +287,6 @@
 import { pub as api } from "@/api";
 import { filesize } from "@/utils";
 import dayjs from "dayjs";
-import { Base64 } from "js-base64";
 import { createURL } from "@/api/utils";
 import HeaderBar from "@/components/header/HeaderBar.vue";
 import Action from "@/components/header/Action.vue";
@@ -313,6 +295,7 @@ import Errors from "@/views/Errors.vue";
 import QrcodeVue from "qrcode.vue";
 import Item from "@/components/files/ListingItem.vue";
 import { useFileStore } from "@/stores/file";
+import { useAuthStore } from "@/stores/auth";
 import { useLayoutStore } from "@/stores/layout";
 import { computed, inject, onMounted, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute } from "vue-router";
@@ -336,6 +319,7 @@ const { t } = useI18n({});
 
 const route = useRoute();
 const fileStore = useFileStore();
+const authStore = useAuthStore();
 const layoutStore = useLayoutStore();
 
 watch(route, () => {
@@ -358,7 +342,7 @@ const icon = computed(() => {
 
 const link = computed(() => (req.value ? api.getDownloadURL(req.value) : ""));
 const raw = computed(() => {
-  if (!req.value || !req.value.items[fileStore.selected[0]]) return "";
+  if (!req.value?.items?.[fileStore.selected[0]]) return "";
   return createURL(
     `api/public/dl/${hash.value}${req.value.items[fileStore.selected[0]].path}`,
     { token: token.value }
@@ -384,7 +368,6 @@ const modTime = computed(() =>
 );
 
 // Functions
-const base64 = (name: any) => Base64.encodeURI(name);
 const play = () => {
   if (tag.value) {
     audio.value?.pause();
@@ -443,8 +426,9 @@ const toggleMultipleSelection = () => {
 };
 
 const isSingleFile = () =>
+  !!req.value?.isDir &&
   fileStore.selectedCount === 1 &&
-  !req.value?.items[fileStore.selected[0]].isDir;
+  req.value.items?.[fileStore.selected[0]]?.isDir === false;
 
 const download = () => {
   if (!req.value) return false;
@@ -530,13 +514,7 @@ onBeforeUnmount(() => {
 }
 
 #shareList {
-  overflow-y: scroll;
-}
-
-@media (min-width: 930px) {
-  #shareList {
-    height: calc(100vh - 9.8em);
-    overflow-y: auto;
-  }
+  overflow-y: auto;
+  max-height: calc(100dvh - 140px);
 }
 </style>

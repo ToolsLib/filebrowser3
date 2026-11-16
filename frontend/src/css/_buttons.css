@@ -1,13 +1,12 @@
 .button {
   outline: 0;
   border: 0;
-  padding: 0.5em 1em;
-  border-radius: 0.1em;
+  padding: 10px 16px;
+  border-radius: 7px;
   cursor: pointer;
   background: var(--blue);
-  color: white;
+  color: var(--surfacePrimary);
   border: 1px solid var(--divider);
-  box-shadow: 0 0 5px var(--divider);
   transition: 0.1s ease all;
 }
 
@@ -34,7 +33,7 @@
   background: transparent;
   box-shadow: 0 0 0;
   border: 0;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .button--flat:hover {
@@ -46,7 +45,7 @@
 }
 
 .button--flat.button--grey {
-  color: #6f6f6f;
+  color: var(--textPrimary);
 }
 
 .button[disabled] {

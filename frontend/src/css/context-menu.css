@@ -3,15 +3,17 @@
   background: var(--surfacePrimary);
   min-width: 180px;
   max-width: 220px;
-  border: 1px solid var(--borderSecondary);
-  box-shadow: 0 2px 4px var(--borderPrimary);
+  border: 1px solid var(--borderPrimary);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 24px #00000018;
   z-index: 999;
 }
 
 .context-menu .action {
   display: block;
   width: 100%;
-  border-radius: 0;
+  border-radius: 6px;
   display: flex;
   align-items: center;
 }

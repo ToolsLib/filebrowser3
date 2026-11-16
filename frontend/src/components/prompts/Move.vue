@@ -10,7 +10,6 @@
         ref="fileList"
         @update:selected="(val) => (dest = val)"
         :exclude="excludedFolders"
-        tabindex="1"
       />
     </div>
 
@@ -35,7 +34,6 @@
           @click="closeHovers"
           :aria-label="$t('buttons.cancel')"
           :title="$t('buttons.cancel')"
-          tabindex="3"
         >
           {{ $t("buttons.cancel") }}
         </button>
@@ -46,7 +44,6 @@
           :disabled="$route.path === dest"
           :aria-label="$t('buttons.move')"
           :title="$t('buttons.move')"
-          tabindex="2"
         >
           {{ $t("buttons.move") }}
         </button>

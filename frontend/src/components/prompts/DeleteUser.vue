@@ -11,14 +11,12 @@
         @click="layoutStore.closeHovers"
         :aria-label="t('buttons.cancel')"
         :title="t('buttons.cancel')"
-        tabindex="1"
       >
         {{ t("buttons.cancel") }}
       </button>
       <button
         class="button button--flat"
         @click="layoutStore.currentPrompt?.confirm"
-        tabindex="2"
       >
         {{ t("buttons.delete") }}
       </button>

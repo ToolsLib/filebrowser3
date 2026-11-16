@@ -1,173 +1,143 @@
-@media (max-width: 1024px) {
-  nav {
-    width: 10em;
+@media (max-width: 1100px) and (min-width: 737px) {
+  :root {
+    --sidebar-width: 208px;
   }
-}
-
-@media (max-width: 1024px) {
   main {
-    width: calc(100% - 13em);
+    margin-inline: calc(var(--sidebar-width) + 24px) 24px;
+  }
+  html[dir="rtl"] main {
+    margin-inline: calc(var(--sidebar-width) + 24px) 24px;
+  }
+  #listing.mosaic .item {
+    width: calc((100% - 12px) / 2);
+  }
+  .workspace-header #search {
+    width: 220px;
+  }
+  .workspace-header:has(#delete-button) #search {
+    width: 150px;
   }
 }
-
 @media (max-width: 736px) {
   body {
-    padding-bottom: 5em;
+    padding-bottom: 32px;
+  }
+  main,
+  html[dir="rtl"] main {
+    width: auto;
+    margin: 0 20px 24px;
+  }
+  header {
+    padding: 0 12px;
+    gap: 4px;
+  }
+  header .brand {
+    display: none;
+  }
+  header .search-button,
+  header .menu-button,
+  #more {
+    display: inline-flex;
+  }
+  header .menu-button {
+    margin-inline-end: auto;
+  }
+  .sidebar {
+    inset-block: 0;
+    z-index: 99999;
+    width: 260px;
+    height: 100dvh;
+    transform: translateX(-100%);
+    transition: transform 0.15s;
+    padding-top: 28px;
+  }
+  html[dir="rtl"] .sidebar {
+    transform: translateX(100%);
+  }
+  .sidebar.active,
+  html[dir="rtl"] .sidebar.active {
+    transform: translateX(0);
+  }
+  .workspace-heading {
+    padding-block: 24px 20px;
+    flex-wrap: wrap;
+  }
+  .workspace-heading h1 {
+    font-size: 23px;
+  }
+  #listing.mosaic .item {
+    width: calc((100% - 12px) / 2);
+    padding: 14px 10px;
+  }
+  #listing.mosaic .item > div:first-child {
+    width: 32px;
+  }
+  #listing.mosaic .item i {
+    font-size: 28px;
+  }
+  #listing.mosaic .item .name {
+    font-size: 13px;
+  }
+  #listing.mosaic.gallery .item {
+    padding: 0;
+  }
+  #listing.mosaic.gallery .item > div:first-child {
+    width: 100%;
+    height: 130px;
   }
   #listing.list .item:not(.header) .size {
     display: none;
   }
   #listing.list .item:not(.header) .name {
-    width: 60%;
+    width: 65%;
+  }
+  #listing.list .item:not(.header) .modified {
+    width: 35%;
   }
   #listing.list .item.header .name {
-    margin-right: 0;
     width: 45%;
   }
   #listing.list .item.header .size {
-    width: 25%;
+    width: 20%;
   }
   #listing.list .item.header .modified {
-    width: 30%;
+    width: 35%;
   }
   #listing.list .item.header p {
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  #more {
-    display: inherit;
-  }
-  header .overlay {
-    width: 100%;
-    height: 100%;
-    background-color: var(--borderPrimary);
-  }
-  #dropdown {
-    position: fixed;
-    top: 1em;
-    right: 1em;
-    display: block;
-    background: var(--surfaceSecondary);
-    box-shadow: 0 0 5px var(--borderPrimary);
-    transform: scale(0);
-    transition: 0.1s ease-in-out transform;
-    transform-origin: top right;
-    z-index: 99999;
-  }
-
-  html[dir="rtl"] #dropdown {
-    right: unset;
-    left: 1em;
-    transform-origin: top left;
-  }
-
-  #dropdown > div {
-    display: block;
-  }
-  #dropdown.active {
-    transform: scale(1);
-  }
-  #dropdown .action {
-    display: flex;
-    align-items: center;
-    border-radius: 0;
-    width: 100%;
-  }
-  #dropdown .action span:not(.counter) {
-    display: inline-block;
-    padding: 0.4em;
-  }
-  #dropdown .counter {
-    left: 2.25em;
+    text-overflow: ellipsis;
+    overflow: hidden;
   }
   #file-selection {
     position: fixed;
-    bottom: 1em;
+    bottom: 16px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    background: var(--surfaceSecondary);
-    box-shadow:
-      rgba(0, 0, 0, 0.06) 0px 1px 3px,
-      rgba(0, 0, 0, 0.12) 0px 1px 2px;
-    width: 95%;
-    max-width: 20em;
-    z-index: 1;
+    background: var(--surfacePrimary);
+    border: 1px solid var(--borderPrimary);
+    box-shadow: 0 8px 24px #00000018;
+    border-radius: 10px;
+    width: calc(100% - 32px);
+    max-width: 400px;
+    z-index: 1001;
+    padding: 4px;
   }
-  #file-selection .action {
-    border-radius: 50%;
-    width: auto;
+  #file-selection:has(> :only-child),
+  #file-selection:empty {
+    display: none;
   }
   #file-selection > span {
-    display: inline-block;
-    margin-left: 1em;
-    color: var(--textPrimary);
-    margin-right: auto;
+    font-size: 12px;
+    margin-inline: 8px auto;
   }
   #file-selection .action span {
     display: none;
   }
-  nav {
-    top: 0;
-    z-index: 99999;
-    background: var(--surfaceSecondary);
-    height: 100vh;
-    width: 16em;
-    overflow-y: auto;
-    box-shadow: 0 0 5px var(--borderPrimary);
-    transition: 0.1s ease left;
-    left: -17em;
-  }
-
-  html[dir="rtl"] nav {
-    left: unset;
-    right: -17em;
-  }
-  nav.active {
-    left: 0;
-  }
-
-  html[dir="rtl"] nav.active {
-    left: unset;
-    right: 0;
-  }
-
-  .shell__divider {
-    height: 12px;
-  }
-
-  header .search-button,
-  header .menu-button {
-    display: inherit;
-  }
-  header img {
-    display: none;
-  }
-  #listing {
-    margin-bottom: 5em;
-  }
-
-  html[dir="rtl"] #listing {
-    margin-right: unset;
-  }
-
-  html[dir="rtl"] .breadcrumbs {
-    transform: translateX(16em);
-  }
-
-  html[dir="rtl"] #nav .wrapper {
-    margin-right: unset;
-  }
-
-  html[dir="rtl"] .dashboard .row {
-    margin-right: unset;
-  }
-
-  main {
-    margin: 0 1em;
-    width: calc(100% - 2em);
+  #listing #multiple-selection {
+    inset-inline-start: 16px;
+    bottom: 80px;
   }
   #search {
     display: none;
@@ -175,9 +145,18 @@
   #search.active {
     display: block;
   }
+  #search .boxes > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .shell__divider {
+    height: 12px;
+  }
 }
-
 @media (max-width: 450px) {
+  #listing.mosaic:not(.gallery) .item {
+    width: 100%;
+    padding: 14px;
+  }
   #listing.list .item:not(.header) .modified {
     display: none;
   }
@@ -185,15 +164,15 @@
     width: 100%;
   }
   #listing.list .item.header {
-    padding: 0.75em 0.5em;
+    padding-inline: 4px;
   }
   #listing.list .item.header .name {
-    width: 34%;
+    width: 35%;
   }
   #listing.list .item.header .size {
-    width: 24%;
+    width: 20%;
   }
   #listing.list .item.header .modified {
-    width: 42%;
+    width: 45%;
   }
 }

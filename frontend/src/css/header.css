@@ -1,279 +1,250 @@
 header {
   z-index: 1000;
   background: var(--surfacePrimary);
-  border-bottom: 1px solid var(--divider);
-  box-shadow: 0 0 5px var(--borderPrimary);
+  border-bottom: 1px solid var(--borderPrimary);
   position: fixed;
-  top: 0;
-  left: 0;
-  height: 4em;
-  width: 100%;
-  padding: 0;
+  inset: 0 0 auto;
+  height: 64px;
   display: flex;
-  padding: 0.5em 0.5em 0.5em 1em;
+  padding: 0 24px;
+  gap: 8px;
   align-items: center;
 }
-
 header > * {
   flex: 0 0 auto;
 }
-
-header title {
+header .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: calc(var(--sidebar-width) - 24px);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--textSecondary);
+}
+header .brand img {
+  width: 28px;
+  height: 28px;
+}
+header title,
+.header-spacer {
   display: block;
   flex: 1 1 auto;
-  padding: 0 1em;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 1.2em;
+  white-space: nowrap;
 }
-
+header title {
+  padding-inline: 12px;
+  font-size: 15px;
+}
+header a {
+  color: inherit;
+}
+header .action span {
+  display: none;
+}
+header .primary-action {
+  background: var(--blue);
+  color: var(--surfacePrimary);
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 8px 14px;
+  border-radius: 8px;
+  margin-inline-start: 8px;
+  font-weight: 600;
+}
+header .primary-action:hover {
+  background: var(--dark-blue);
+}
+header .primary-action span {
+  display: inline;
+}
+header .primary-action i {
+  padding: 8px 6px;
+  font-size: 20px;
+}
 header .overlay {
   width: 0;
   height: 0;
 }
-
-header a,
-header a:hover {
-  color: inherit;
-}
-
-header > div:first-child > .action,
-header img {
-  margin-right: 1em;
-}
-
-header img {
-  height: 2.5em;
-}
-
-header .action span {
-  display: none;
-}
-
-header > div div {
-  vertical-align: middle;
-  position: relative;
-}
-
 header .search-button,
-header .menu-button {
-  display: none;
-}
-
+header .menu-button,
 #more {
   display: none;
 }
-
 #search {
   position: relative;
-  height: 100%;
-  width: 100%;
-  max-width: 25em;
+  height: 38px;
+  width: min(360px, 28vw);
 }
-
-#search.active {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 100%;
-  max-width: 100%;
-  height: 100%;
-  z-index: 9999;
-}
-
 #search #input {
-  background: var(--surfaceSecondary);
-  border-color: var(--surfacePrimary);
+  background: var(--background);
+  border: 1px solid var(--borderPrimary);
   display: flex;
-  height: 100%;
-  padding: 0em 0.75em;
-  border-radius: 0.3em;
-  transition: 0.1s ease all;
   align-items: center;
-  z-index: 2;
+  height: 100%;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 8px;
 }
-
-#search #input input::placeholder {
-  color: var(--textSecondary);
-}
-
-#search.active #input {
-  border-bottom: 1px solid var(--borderPrimary);
-  box-shadow: 0 0 5px var(--borderPrimary);
-  background: var(--surfacePrimary);
-  height: 4em;
-}
-
-#search.active > div {
-  border-radius: 0 !important;
-}
-
-#search.active i,
-#search.active input {
+#search #input > i {
+  font-size: 20px;
   color: var(--textPrimary);
 }
-
-#search #input > .action,
-#search #input > i {
-  margin-right: 0.3em;
-  user-select: none;
-}
-
 #search input {
   width: 100%;
   border: 0;
-  background-color: transparent;
   padding: 0;
+  background: transparent;
+  color: var(--textSecondary);
+  min-width: 0;
 }
-
-#search #result {
-  visibility: visible;
-  max-height: none;
-  background: var(--background);
-  text-align: left;
-  padding: 0;
+#search input::placeholder {
   color: var(--textPrimary);
-  height: 0;
-  transition:
-    0.1s ease height,
-    0.1s ease padding;
-  overflow-x: hidden;
-  overflow-y: auto;
-  z-index: 1;
 }
-
-html[dir="rtl"] #search #result {
-  direction: ltr;
+#search input:focus-visible {
+  outline-offset: 6px;
 }
-
-#search #result > div > *:first-child {
-  margin-top: 0;
-}
-
-html[dir="rtl"] #search #result {
-  text-align: right;
-}
-
-/*** RTL - Keep search result LTR because it has paths (in english) ***/
-html[dir="rtl"] #search #result ul > * {
-  direction: ltr;
-  text-align: left;
-}
-
-#search.active #result {
-  padding: 0.5em;
-  height: calc(100% - 4em);
-}
-
-#search ul {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-#search li {
-  margin-bottom: 0.5em;
-}
-
-#search #result > div {
-  max-width: 45em;
-  margin: 0 auto;
-}
-
-#search #result #renew {
+#search.active {
+  position: fixed;
+  inset: 0;
   width: 100%;
-  text-align: center;
-  display: none;
+  height: 100%;
+  z-index: 99999;
+  background: var(--background);
+}
+#search.active #input {
+  height: 64px;
+  max-width: 880px;
+  margin: auto;
+  border: 0;
+  border-bottom: 1px solid var(--borderPrimary);
+  border-radius: 0;
+  background: var(--surfacePrimary);
+}
+#search #result {
+  height: 0;
+  overflow: hidden;
+}
+#search.active #result {
+  height: calc(100% - 64px);
+  overflow-y: auto;
+  padding: 32px 24px;
+  color: var(--textPrimary);
+}
+#search #result > div {
+  max-width: 800px;
+  margin: auto;
+}
+#search ul {
+  list-style: none;
   margin: 0;
-  max-width: none;
+  padding: 0;
 }
-
-#search.ongoing #result #renew {
-  display: block;
+#search li {
+  margin-bottom: 6px;
 }
-
-#search.active #result i {
-  color: var(--iconTertiary);
-}
-
-#search.active #result > p > i {
-  text-align: center;
-  margin: 0 auto;
-  display: table;
-}
-
-#search.active #result ul li a {
+#search li a {
   display: flex;
   align-items: center;
-  padding: 0.3em 0;
-}
-
-#search.active #result ul li a i {
-  margin-right: 0.3em;
-}
-
-/* I dont think we need these anymore */
-/* #search::-webkit-input-placeholder {
-  color: var(--textPrimary);
-}
-
-#search::-moz-placeholder {
-  opacity: 1;
-  color: var(--textPrimary);
-}
-
-#search:-ms-input-placeholder {
-  color: var(--textPrimary);
-}
-
-#search #input input::placeholder {
-  color: var(--textPrimary);
-} */
-
-#search .boxes {
+  gap: 12px;
+  padding: 12px;
   border: 1px solid var(--borderPrimary);
-  box-shadow: 0 0 5px var(--borderPrimary);
   background: var(--surfacePrimary);
-  margin: 1em 0;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
 }
-
+#search li a:hover {
+  background: var(--hover);
+}
+#search li i {
+  flex-shrink: 0;
+  font-size: 22px;
+}
+#search .boxes {
+  margin-top: 28px;
+}
 #search .boxes h3 {
-  margin: 0;
-  font-weight: 500;
-  font-size: 1em;
-  color: var(--textSecondary);
-  padding: 0.5em;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
 }
-
-html[dir="rtl"] #search .boxes h3 {
-  text-align: right;
-}
-
 #search .boxes > div {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  margin-right: -1em;
-  margin-bottom: -1em;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
-
-#search .boxes > div > div {
-  background: var(--blue);
-  color: #fff;
-  text-align: center;
-  width: 10em;
-  padding: 1em;
+#search .boxes button {
+  border: 1px solid var(--borderPrimary);
+  border-radius: 10px;
+  padding: 24px 12px;
+  color: var(--textSecondary);
+  background: var(--surfacePrimary);
   cursor: pointer;
-  margin-bottom: 1em;
-  margin-right: 1em;
-  flex-grow: 1;
 }
-
-#search .boxes p {
-  margin: 1em 0 0;
+#search .boxes button:hover {
+  border-color: var(--blue);
+  background: var(--item-selected);
 }
-
 #search .boxes i {
-  color: #fff !important;
-  font-size: 3.5em;
+  color: var(--iconPrimary);
+  font-size: 28px;
+}
+#search .boxes p {
+  margin: 8px 0 0;
+}
+@media (max-width: 1100px) {
+  #more {
+    display: inline-flex;
+  }
+  header .overlay {
+    width: 100%;
+    height: 100%;
+    background: #12182070;
+  }
+  #dropdown {
+    position: fixed;
+    top: 56px;
+    inset-inline-end: 12px;
+    display: none;
+    width: 230px;
+    max-height: calc(100dvh - 80px);
+    overflow-y: auto;
+    background: var(--surfacePrimary);
+    border: 1px solid var(--borderPrimary);
+    border-radius: 10px;
+    padding: 6px;
+    box-shadow: 0 12px 32px #00000020;
+    z-index: 99999;
+  }
+  #dropdown.active {
+    display: block;
+  }
+  #dropdown > div {
+    display: block;
+  }
+  #dropdown .action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 6px;
+    width: 100%;
+    padding: 4px;
+    margin: 0;
+    font-size: 14px;
+    text-align: start;
+  }
+  #dropdown .action span:not(.counter) {
+    display: inline;
+  }
+  #dropdown .action .counter {
+    display: none;
+  }
+  #dropdown .primary-action {
+    background: var(--item-selected);
+    color: var(--blue);
+  }
 }

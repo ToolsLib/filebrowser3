@@ -1,14 +1,29 @@
 <template>
   <div v-show="active" @click="closeHovers" class="overlay"></div>
-  <nav :class="{ active }">
+  <nav
+    class="sidebar"
+    id="workspace-navigation"
+    :class="{ active }"
+    :aria-label="$t('ui.navigation')"
+    :inert="isMobile && !active"
+    @keydown.esc.prevent.stop="closeSidebar"
+  >
+    <div class="sidebar-heading">{{ $t("ui.workspace") }}</div>
     <template v-if="isLoggedIn">
-      <button @click="toAccountSettings" class="action">
+      <button
+        @click="toAccountSettings"
+        class="action account-action"
+        :class="{ 'is-active': $route.path === '/settings/profile' }"
+        :aria-current="$route.path === '/settings/profile' ? 'page' : undefined"
+      >
         <i class="material-icons">person</i>
         <span>{{ user.username }}</span>
       </button>
       <button
         class="action"
         @click="toRoot"
+        :class="{ 'is-active': isFiles }"
+        :aria-current="isFiles ? 'page' : undefined"
         :aria-label="$t('sidebar.myFiles')"
         :title="$t('sidebar.myFiles')"
       >
@@ -16,7 +31,7 @@
         <span>{{ $t("sidebar.myFiles") }}</span>
       </button>
 
-      <div v-if="user.perm.create">
+      <div v-if="user.perm.create && isFiles" class="sidebar-create">
         <button
           @click="showHover('newDir')"
           class="action"
@@ -42,10 +57,15 @@
         <button
           class="action"
           @click="toGlobalSettings"
+          :class="{
+            'is-active':
+              $route.path.startsWith('/settings') &&
+              $route.path !== '/settings/profile',
+          }"
           :aria-label="$t('sidebar.settings')"
           :title="$t('sidebar.settings')"
         >
-          <i class="material-icons">settings_applications</i>
+          <i class="material-icons">settings</i>
           <span>{{ $t("sidebar.settings") }}</span>
         </button>
       </div>
@@ -85,13 +105,13 @@
       </router-link>
     </template>
 
-    <div
-      class="credits"
-      v-if="isFiles && !disableUsedPercentage"
-      style="width: 90%; margin: 2em 2.5em 3em 2.5em"
-    >
-      <progress-bar :val="usage.usedPercentage" size="small"></progress-bar>
-      <br />
+    <div class="credits storage-usage" v-if="isFiles && !disableUsedPercentage">
+      <progress
+        :value="usage.usedPercentage"
+        max="100"
+        :aria-label="$t('ui.storage')"
+      ></progress>
+      <span class="storage-label">{{ $t("ui.storage") }}</span>
       {{ $t("sidebar.diskUsed", { used: usage.used, total: usage.total }) }}
     </div>
 
@@ -108,7 +128,9 @@
         <span> {{ " " }} {{ version }}</span>
       </span>
       <span>
-        <a @click="help">{{ $t("sidebar.help") }}</a>
+        <button class="text-button" @click="help">
+          {{ $t("sidebar.help") }}
+        </button>
       </span>
     </p>
   </nav>
@@ -116,6 +138,7 @@
 
 <script>
 import { reactive } from "vue";
+import { useMediaQuery } from "@vueuse/core";
 import { mapActions, mapState } from "pinia";
 import { useAuthStore } from "@/stores/auth";
 import { useFileStore } from "@/stores/file";
@@ -133,8 +156,7 @@ import {
   loginPage,
 } from "@/utils/constants";
 import { files as api } from "@/api";
-import ProgressBar from "@/components/ProgressBar.vue";
-import prettyBytes from "pretty-bytes";
+import { filesize } from "@/utils";
 
 const USAGE_DEFAULT = { used: "0 B", total: "0 B", usedPercentage: 0 };
 
@@ -142,10 +164,11 @@ export default {
   name: "sidebar",
   setup() {
     const usage = reactive(USAGE_DEFAULT);
-    return { usage, usageAbortController: new AbortController() };
-  },
-  components: {
-    ProgressBar,
+    return {
+      usage,
+      usageAbortController: new AbortController(),
+      isMobile: useMediaQuery("(max-width: 736px)"),
+    };
   },
   inject: ["$showError"],
   computed: {
@@ -164,6 +187,10 @@ export default {
   },
   methods: {
     ...mapActions(useLayoutStore, ["closeHovers", "showHover"]),
+    closeSidebar() {
+      this.closeHovers();
+      document.querySelector("header .menu-button")?.focus();
+    },
     abortOngoingFetchUsage() {
       this.usageAbortController.abort();
     },
@@ -180,9 +207,10 @@ export default {
         this.usageAbortController = new AbortController();
         const usage = await api.usage(path, this.usageAbortController.signal);
         usageStats = {
-          used: prettyBytes(usage.used, { binary: true }),
-          total: prettyBytes(usage.total, { binary: true }),
-          usedPercentage: Math.round((usage.used / usage.total) * 100),
+          used: filesize(usage.used),
+          total: filesize(usage.total),
+          usedPercentage:
+            usage.total > 0 ? Math.round((usage.used / usage.total) * 100) : 0,
         };
       } finally {
         return Object.assign(this.usage, usageStats);

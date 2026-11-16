@@ -8,32 +8,49 @@
 
         <div class="card-content">
           <p>
-            <input type="checkbox" name="hideDotfiles" v-model="hideDotfiles" />
-            {{ t("settings.hideDotfiles") }}
+            <label class="checkbox-option">
+              <input
+                type="checkbox"
+                name="hideDotfiles"
+                v-model="hideDotfiles"
+              />
+              {{ t("settings.hideDotfiles") }}
+            </label>
           </p>
           <p>
-            <input type="checkbox" name="singleClick" v-model="singleClick" />
-            {{ t("settings.singleClick") }}
+            <label class="checkbox-option">
+              <input type="checkbox" name="singleClick" v-model="singleClick" />
+              {{ t("settings.singleClick") }}
+            </label>
           </p>
           <p>
-            <input
-              type="checkbox"
-              name="redirectAfterCopyMove"
-              v-model="redirectAfterCopyMove"
-            />
-            {{ t("settings.redirectAfterCopyMove") }}
+            <label class="checkbox-option">
+              <input
+                type="checkbox"
+                name="redirectAfterCopyMove"
+                v-model="redirectAfterCopyMove"
+              />
+              {{ t("settings.redirectAfterCopyMove") }}
+            </label>
           </p>
           <p>
-            <input type="checkbox" name="dateFormat" v-model="dateFormat" />
-            {{ t("settings.setDateFormat") }}
+            <label class="checkbox-option">
+              <input type="checkbox" name="dateFormat" v-model="dateFormat" />
+              {{ t("settings.setDateFormat") }}
+            </label>
           </p>
-          <h3>{{ t("settings.language") }}</h3>
+          <label class="form-label" for="profile-language">{{
+            t("settings.language")
+          }}</label>
           <languages
+            id="profile-language"
             class="input input--block"
             v-model:locale="locale"
           ></languages>
 
-          <h3>{{ t("settings.aceEditorTheme") }}</h3>
+          <label class="form-label" for="aceTheme">{{
+            t("settings.aceEditorTheme")
+          }}</label>
           <AceEditorTheme
             class="input input--block"
             v-model:aceEditorTheme="aceEditorTheme"
@@ -71,21 +88,38 @@
         </div>
 
         <div class="card-content">
+          <label class="form-label" for="profile-password">{{
+            t("settings.newPassword")
+          }}</label>
           <input
+            id="profile-password"
+            autocomplete="new-password"
             :class="passwordClass"
             type="password"
             :placeholder="t('settings.newPassword')"
             v-model="password"
             name="password"
           />
+          <label class="form-label" for="profile-password-confirm">{{
+            t("settings.newPasswordConfirm")
+          }}</label>
           <input
+            id="profile-password-confirm"
+            autocomplete="new-password"
             :class="passwordClass"
             type="password"
             :placeholder="t('settings.newPasswordConfirm')"
             v-model="passwordConf"
             name="passwordConf"
           />
+          <label
+            v-if="isCurrentPasswordRequired"
+            class="form-label"
+            for="profile-current-password"
+            >{{ t("settings.currentPassword") }}</label
+          >
           <input
+            id="profile-current-password"
             v-if="isCurrentPasswordRequired"
             :class="passwordClass"
             type="password"

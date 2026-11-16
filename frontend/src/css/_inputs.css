@@ -2,8 +2,8 @@
   background: var(--surfacePrimary);
   color: var(--textSecondary);
   border: 1px solid var(--borderPrimary);
-  border-radius: 0.1em;
-  padding: 0.5em 1em;
+  border-radius: 7px;
+  padding: 10px 12px;
   transition: 0.2s ease all;
   margin: 0;
 }
@@ -11,6 +11,25 @@
 .input:hover,
 .input:focus {
   border-color: var(--borderSecondary);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--blue);
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  margin-inline-end: 6px;
+}
+input[type="number"] {
+  width: 100%;
+  min-width: 0;
+}
+.card-content > label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-block: 16px 8px;
 }
 
 .input--block {

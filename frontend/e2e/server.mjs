@@ -46,6 +46,28 @@ await mkdir(parent, { recursive: true });
 const dir = await mkdtemp(path.join(parent, "server-"));
 const root = path.join(dir, "files");
 await mkdir(root);
+for (const name of ["Documents", "Projects", "Photos", "Empty folder"])
+  await mkdir(path.join(root, name));
+await writeFile(
+  path.join(root, "Documents", "Meeting notes.md"),
+  "# Meeting notes\n\nA simple place for shared notes.\n"
+);
+await writeFile(
+  path.join(root, "Projects", "Project brief.md"),
+  "# Project brief\n\nKeep the work focused and easy to find.\n"
+);
+await writeFile(
+  path.join(root, "Quarterly report.csv"),
+  "quarter,revenue\nQ1,24000\nQ2,28000\n"
+);
+await writeFile(
+  path.join(root, "Getting started.txt"),
+  "Welcome to your workspace.\n"
+);
+await writeFile(
+  path.join(root, "Résumé — design notes.txt"),
+  "Unicode filenames stay readable.\n"
+);
 await writeFile(
   path.join(root, "review.md"),
   "# Review fixture\n\nOriginal text.\n"

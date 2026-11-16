@@ -36,8 +36,11 @@
             <label for="minimumPasswordLength">{{
               t("settings.minimumPasswordLength")
             }}</label>
-            <vue-number-input
-              controls
+            <input
+              type="number"
+              class="input input--block"
+              required
+              step="1"
               v-model.number="settings.minimumPasswordLength"
               id="minimumPasswordLength"
               :min="1"
@@ -145,8 +148,11 @@
               <label for="tus-retryCount">{{
                 t("settings.tusUploadsRetryCount")
               }}</label>
-              <vue-number-input
-                controls
+              <input
+                type="number"
+                class="input input--block"
+                required
+                step="1"
                 v-model.number="settings.tus.retryCount"
                 id="tus-retryCount"
                 :min="0"

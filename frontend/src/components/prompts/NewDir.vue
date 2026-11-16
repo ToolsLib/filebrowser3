@@ -12,7 +12,6 @@
         type="text"
         @keyup.enter="submit"
         v-model.trim="name"
-        tabindex="1"
       />
       <CreateFilePath :name="name" :is-dir="true" :path="base" />
     </div>
@@ -23,7 +22,6 @@
         @click="layoutStore.closeHovers"
         :aria-label="t('buttons.cancel')"
         :title="t('buttons.cancel')"
-        tabindex="3"
       >
         {{ t("buttons.cancel") }}
       </button>
@@ -32,7 +30,6 @@
         :aria-label="$t('buttons.create')"
         :title="t('buttons.create')"
         @click="submit"
-        tabindex="2"
       >
         {{ t("buttons.create") }}
       </button>

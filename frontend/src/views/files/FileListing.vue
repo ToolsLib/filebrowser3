@@ -1,13 +1,21 @@
 <template>
   <div>
-    <header-bar showMenu showLogo>
+    <header-bar showMenu showLogo class="workspace-header">
       <search />
-      <title />
+      <div class="header-spacer" />
       <action
         class="search-button"
         icon="search"
         :label="t('buttons.search')"
         @action="openSearch()"
+      />
+      <action
+        v-if="headerButtons.upload"
+        icon="file_upload"
+        id="upload-button"
+        class="primary-action"
+        :label="t('buttons.upload')"
+        @action="uploadFunc"
       />
 
       <template #actions>
@@ -57,6 +65,7 @@
           :icon="viewIcon"
           :label="t('buttons.switchView')"
           @action="switchView"
+          id="view-button"
         />
         <action
           v-if="headerButtons.download"
@@ -64,13 +73,6 @@
           :label="t('buttons.download')"
           @action="download"
           :counter="fileStore.selectedCount"
-        />
-        <action
-          v-if="headerButtons.upload"
-          icon="file_upload"
-          id="upload-button"
-          :label="t('buttons.upload')"
-          @action="uploadFunc"
         />
         <action icon="info" :label="t('buttons.info')" show="info" />
         <action
@@ -134,15 +136,42 @@
       </h2>
     </div>
     <template v-else>
+      <div class="workspace-heading">
+        <div>
+          <h1>{{ currentFolder }}</h1>
+          <p>
+            {{ t("ui.itemCount", fileStore.req?.items.length ?? 0) }}
+          </p>
+        </div>
+        <div
+          v-if="fileStore.selectedCount"
+          class="selection-summary"
+          role="status"
+        >
+          {{ t("prompts.filesSelected", fileStore.selectedCount) }}
+          <button
+            class="action"
+            @click="fileStore.selected = []"
+            :aria-label="t('buttons.clear')"
+            :title="t('buttons.clear')"
+          >
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+      </div>
       <div
         v-if="
           (fileStore.req?.numDirs ?? 0) + (fileStore.req?.numFiles ?? 0) == 0
         "
       >
-        <h2 class="message">
-          <i class="material-icons">sentiment_dissatisfied</i>
-          <span>{{ t("files.lonely") }}</span>
-        </h2>
+        <div class="empty-state">
+          <i class="material-icons" aria-hidden="true">folder_open</i>
+          <h2>{{ t("ui.emptyTitle") }}</h2>
+          <p>{{ t(userCanCreate ? "ui.emptyHint" : "ui.emptyReadOnly") }}</p>
+          <button v-if="userCanCreate" class="button" @click="uploadFunc">
+            {{ t("buttons.upload") }}
+          </button>
+        </div>
         <input
           style="display: none"
           type="file"
@@ -177,6 +206,8 @@
                 role="button"
                 tabindex="0"
                 @click="sort('name')"
+                @keydown.enter.prevent="sort('name')"
+                @keydown.space.prevent="sort('name')"
                 :title="t('files.sortByName')"
                 :aria-label="t('files.sortByName')"
               >
@@ -190,6 +221,8 @@
                 role="button"
                 tabindex="0"
                 @click="sort('size')"
+                @keydown.enter.prevent="sort('size')"
+                @keydown.space.prevent="sort('size')"
                 :title="t('files.sortBySize')"
                 :aria-label="t('files.sortBySize')"
               >
@@ -202,6 +235,8 @@
                 role="button"
                 tabindex="0"
                 @click="sort('modified')"
+                @keydown.enter.prevent="sort('modified')"
+                @keydown.space.prevent="sort('modified')"
                 :title="t('files.sortByLastModified')"
                 :aria-label="t('files.sortByLastModified')"
               >
@@ -222,7 +257,7 @@
         >
           <item
             v-for="item in dirs"
-            :key="base64(item.name)"
+            :key="item.name"
             v-bind:index="item.index"
             v-bind:name="item.name"
             v-bind:isDir="item.isDir"
@@ -245,7 +280,7 @@
         >
           <item
             v-for="item in files"
-            :key="base64(item.name)"
+            :key="item.name"
             v-bind:index="item.index"
             v-bind:name="item.name"
             v-bind:isDir="item.isDir"
@@ -349,9 +384,7 @@ import { users, files as api } from "@/api";
 import { enableExec } from "@/utils/constants";
 import * as upload from "@/utils/upload";
 import buttons from "@/utils/buttons";
-import css from "@/utils/css";
 import { throttle } from "lodash-es";
-import { Base64 } from "js-base64";
 
 import HeaderBar from "@/components/header/HeaderBar.vue";
 import Action from "@/components/header/Action.vue";
@@ -373,7 +406,6 @@ import { storeToRefs } from "pinia";
 import { removePrefix } from "@/api/utils";
 
 const showLimit = ref<number>(50);
-const columnWidth = ref<number>(280);
 const dragCounter = ref<number>(0);
 const width = ref<number>(window.innerWidth);
 const itemWeight = ref<number>(0);
@@ -390,6 +422,13 @@ const layoutStore = useLayoutStore();
 const { req } = storeToRefs(fileStore);
 
 const route = useRoute();
+const currentFolder = computed(() => {
+  const parts = route.path.split("/").filter(Boolean);
+  return parts.length > 1
+    ? decodeURIComponent(parts[parts.length - 1])
+    : t("sidebar.myFiles");
+});
+const userCanCreate = computed(() => !!authStore.user?.perm.create);
 onBeforeRouteUpdate(() => {
   hideContextMenu();
 });
@@ -512,9 +551,6 @@ watch(req, () => {
 });
 
 onMounted(() => {
-  // Check the columns size for the first time.
-  columnsResize();
-
   // How much every listing item affects the window height
   setItemWeight();
 
@@ -534,6 +570,7 @@ onMounted(() => {
   document.addEventListener("dragenter", dragEnter);
   document.addEventListener("dragleave", dragLeave);
   document.addEventListener("drop", drop);
+  document.addEventListener("dragend", resetOpacity);
 });
 
 onBeforeUnmount(() => {
@@ -547,9 +584,8 @@ onBeforeUnmount(() => {
   document.removeEventListener("dragenter", dragEnter);
   document.removeEventListener("dragleave", dragLeave);
   document.removeEventListener("drop", drop);
+  document.removeEventListener("dragend", resetOpacity);
 });
-
-const base64 = (name: string) => Base64.encodeURI(name);
 
 const keyEvent = (event: KeyboardEvent) => {
   // No prompts are shown
@@ -733,18 +769,6 @@ const paste = async (event: Event) => {
   action(false, false);
 };
 
-const columnsResize = () => {
-  // Update the columns size based on the window width.
-  const items_ = css(["#listing.mosaic .item", ".mosaic#listing .item"]);
-  if (items_ === null) return;
-
-  let columns = Math.floor(
-    (document.querySelector("main")?.offsetWidth ?? 0) / columnWidth.value
-  );
-  if (columns === 0) columns = 1;
-  items_.style.width = `calc(${100 / columns}% - 1em)`;
-};
-
 const scrollEvent = throttle(() => {
   const totalItems =
     (fileStore.req?.numDirs ?? 0) + (fileStore.req?.numFiles ?? 0);
@@ -810,9 +834,7 @@ const drop = async (event: DragEvent) => {
     el.classList.contains("item") &&
     el.dataset.dir === "true"
   ) {
-    // Get url from ListingItem instance
-    // TODO: Don't know what is happening here
-    path = el.__vue__.url;
+    path = el.dataset.url || path;
 
     try {
       (await api.fetch(path)).items;
@@ -924,6 +946,7 @@ const uploadInput = async (event: Event) => {
 };
 
 const resetOpacity = () => {
+  dragCounter.value = 0;
   const items = document.getElementsByClassName("item");
 
   Array.from(items).forEach((file: Element) => {
@@ -971,7 +994,6 @@ const toggleMultipleSelection = () => {
 };
 
 const windowsResize = throttle(() => {
-  columnsResize();
   width.value = window.innerWidth;
 
   // Listing element is not displayed
@@ -1054,6 +1076,7 @@ const setItemWeight = () => {
   if (listing.value === null || fileStore.req === null) return;
 
   let itemQuantity = fileStore.req.numDirs + fileStore.req.numFiles;
+  if (itemQuantity === 0) return;
   if (itemQuantity > showLimit.value) itemQuantity = showLimit.value;
 
   // How much every listing item affects the window height

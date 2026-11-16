@@ -64,7 +64,6 @@
           @click="closeHovers"
           :aria-label="$t('buttons.close')"
           :title="$t('buttons.close')"
-          tabindex="2"
         >
           {{ $t("buttons.close") }}
         </button>
@@ -74,7 +73,6 @@
           @click="() => switchListing()"
           :aria-label="$t('buttons.new')"
           :title="$t('buttons.new')"
-          tabindex="1"
         >
           {{ $t("buttons.new") }}
         </button>
@@ -83,36 +81,34 @@
 
     <template v-else>
       <div class="card-content">
-        <p>{{ $t("settings.shareDuration") }}</p>
+        <label for="share-duration">{{ $t("settings.shareDuration") }}</label>
         <div class="input-group input">
-          <vue-number-input
-            center
-            controls
-            size="small"
+          <input
+            ref="duration"
+            id="share-duration"
+            type="number"
+            required
+            step="1"
             :max="2147483647"
             :min="0"
             @keyup.enter="submit"
-            v-model="time"
-            tabindex="1"
+            v-model.number="time"
           />
-          <select
-            class="right"
-            v-model="unit"
-            :aria-label="$t('time.unit')"
-            tabindex="2"
-          >
+          <select class="right" v-model="unit" :aria-label="$t('time.unit')">
             <option value="seconds">{{ $t("time.seconds") }}</option>
             <option value="minutes">{{ $t("time.minutes") }}</option>
             <option value="hours">{{ $t("time.hours") }}</option>
             <option value="days">{{ $t("time.days") }}</option>
           </select>
         </div>
-        <p>{{ $t("prompts.optionalPassword") }}</p>
+        <p class="small">{{ $t("ui.shareDurationHint") }}</p>
+        <label for="share-password">{{ $t("prompts.optionalPassword") }}</label>
         <input
+          id="share-password"
+          autocomplete="new-password"
           class="input input--block"
           type="password"
           v-model.trim="password"
-          tabindex="3"
         />
       </div>
 
@@ -122,7 +118,6 @@
           @click="() => switchListing()"
           :aria-label="$t('buttons.cancel')"
           :title="$t('buttons.cancel')"
-          tabindex="5"
         >
           {{ $t("buttons.cancel") }}
         </button>
@@ -132,7 +127,6 @@
           @click="submit"
           :aria-label="$t('buttons.share')"
           :title="$t('buttons.share')"
-          tabindex="4"
         >
           {{ $t("buttons.share") }}
         </button>
@@ -219,6 +213,7 @@ export default {
       );
     },
     submit: async function () {
+      if (!this.$refs.duration?.reportValidity()) return;
       try {
         let res = null;
 

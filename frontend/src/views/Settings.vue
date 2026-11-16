@@ -1,6 +1,12 @@
 <template>
   <div class="dashboard">
-    <header-bar showMenu showLogo />
+    <header-bar showMenu showLogo><div class="header-spacer" /></header-bar>
+    <div class="workspace-heading">
+      <div>
+        <h1>{{ t("sidebar.settings") }}</h1>
+        <p>{{ t("ui.settingsHint") }}</p>
+      </div>
+    </div>
 
     <div id="nav">
       <div class="wrapper">

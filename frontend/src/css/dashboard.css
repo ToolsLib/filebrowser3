@@ -1,15 +1,16 @@
 .dashboard {
-  margin: 1em 0;
+  margin: 0;
 }
 
 .dashboard .row {
   display: flex;
+  align-items: flex-start;
   margin: 0 -0.5em;
   flex-wrap: wrap;
 }
 
 html[dir="rtl"] .dashboard .row {
-  margin-right: 16em;
+  margin-right: -0.5em;
 }
 
 .dashboard .row .column {
@@ -20,6 +21,9 @@ html[dir="rtl"] .dashboard .row {
 
 .dashboard .row .column .card {
   flex-grow: 1;
+}
+.dashboard .row.single-column .column {
+  width: 100%;
 }
 
 @media (max-width: 1200px) {
@@ -38,6 +42,25 @@ a {
   font-size: 0.8em;
   font-weight: 500;
   color: var(--textPrimary);
+}
+.dashboard p label.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--textSecondary);
+  cursor: pointer;
+}
+.dashboard .form-label {
+  display: block;
+  margin-block: 20px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--textPrimary);
+}
+.dashboard .form-label:first-child {
+  margin-top: 0;
 }
 
 li code,
@@ -61,11 +84,11 @@ p code {
 .dashboard #nav .wrapper {
   display: flex;
   flex-grow: 1;
-  border-bottom: 2px solid var(--divider);
+  border-bottom: 1px solid var(--borderPrimary);
 }
 
 html[dir="rtl"] .dashboard #nav .wrapper {
-  margin-right: 16em;
+  margin-right: 0;
 }
 
 .dashboard #nav ul {
@@ -74,15 +97,15 @@ html[dir="rtl"] .dashboard #nav .wrapper {
   color: var(--action);
   font-weight: 500;
   padding: 0;
-  margin: 0 0 -2px 0;
-  font-size: 0.8em;
+  margin: 0 0 -1px 0;
+  font-size: 13px;
   text-align: center;
   justify-content: left;
 }
 
 .dashboard #nav ul li {
   position: relative;
-  padding: 1.5em 2em;
+  padding: 12px 16px;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
   transition: 0.1s ease-in-out all;
@@ -161,11 +184,8 @@ table tr > *:last-child {
   margin: 0 0 1rem 0;
   background: var(--surfacePrimary);
   color: var(--textSecondary);
-  border-radius: 2px;
-  box-shadow:
-    0 2px 2px 0 rgba(0, 0, 0, 0.14),
-    0 1px 5px 0 rgba(0, 0, 0, 0.12),
-    0 3px 1px -2px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--borderPrimary);
+  border-radius: var(--radius);
   overflow: auto;
 }
 
@@ -174,9 +194,9 @@ table tr > *:last-child {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  max-width: 25em;
+  max-width: 460px;
   width: 90%;
-  max-height: 95%;
+  max-height: 90dvh;
   /* animation-duration: 0.3s;
   animation-fill-mode: forwards; */
 }
@@ -190,7 +210,7 @@ table tr > *:last-child {
 }
 
 .card .card-title {
-  padding: 1.5em 1em 1em;
+  padding: 24px 24px 12px;
   display: flex;
 }
 
@@ -204,7 +224,7 @@ html[dir="rtl"] .card .card-title > *:first-child {
 }
 
 .card > div {
-  padding: 1em 1em;
+  padding: 16px 24px;
 }
 
 .card > div:first-child {
@@ -233,7 +253,9 @@ body.rtl .card .card-action {
 }
 
 .card h2 {
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.02em;
 }
 
 .card h3 {

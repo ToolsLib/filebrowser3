@@ -8,6 +8,8 @@
     @dragover="dragOver"
     @drop="drop"
     @click="itemClick"
+    @keydown.enter.prevent.stop="open"
+    @keydown.space.prevent.stop="click"
     @mousedown="handleMouseDown"
     @mouseup="handleMouseUp"
     @mouseleave="handleMouseLeave"
@@ -16,6 +18,7 @@
     @touchcancel="handleTouchCancel"
     @touchmove="handleTouchMove"
     :data-dir="isDir"
+    :data-url="url"
     :data-type="type"
     :aria-label="name"
     :aria-selected="isSelected"
@@ -24,8 +27,13 @@
   >
     <div>
       <img
-        v-if="!readOnly && type === 'image' && isThumbsEnabled"
-        v-lazy="thumbnailUrl"
+        v-if="
+          !readOnly && type === 'image' && isThumbsEnabled && !thumbnailFailed
+        "
+        :src="thumbnailUrl"
+        loading="lazy"
+        decoding="async"
+        @error="thumbnailFailed = true"
         :alt="name"
       />
       <i v-else class="material-icons"></i>
@@ -58,6 +66,7 @@ import { computed, inject, ref } from "vue";
 import { useRouter } from "vue-router";
 
 const touches = ref<number>(0);
+const thumbnailFailed = ref(false);
 
 const longPressTimer = ref<number | null>(null);
 const longPressTriggered = ref<boolean>(false);
@@ -130,7 +139,10 @@ const humanTime = () => {
   return dayjs(props.modified).fromNow();
 };
 
-const dragStart = () => {
+const internalDragType = "application/x-filebrowser-path";
+const dragStart = (event: DragEvent) => {
+  event.dataTransfer?.setData(internalDragType, props.url);
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = "copyMove";
   if (fileStore.selectedCount === 0) {
     fileStore.selected.push(props.index);
     return;
@@ -158,18 +170,12 @@ const dragOver = (event: Event) => {
   }
 };
 
-const drop = async (event: Event) => {
+const drop = async (event: DragEvent) => {
+  if (!event.dataTransfer?.types.includes(internalDragType)) return;
   if (!canDrop.value) return;
   event.preventDefault();
 
   if (fileStore.selectedCount === 0) return;
-
-  let el = event.target as HTMLElement | null;
-  for (let i = 0; i < 5; i++) {
-    if (el !== null && !el.classList.contains("item")) {
-      el = el.parentElement;
-    }
-  }
 
   const items: any[] = [];
 
@@ -188,17 +194,10 @@ const drop = async (event: Event) => {
     }
   }
 
-  // Get url from ListingItem instance
-  if (el === null) {
-    return;
-  }
-  const path = el.__vue__.url;
+  const path = props.url;
 
   const action = (overwrite?: boolean, rename?: boolean) => {
-    const action =
-      (event as KeyboardEvent).ctrlKey || (event as KeyboardEvent).metaKey
-        ? api.copy
-        : api.move;
+    const action = event.ctrlKey || event.metaKey ? api.copy : api.move;
     action(items, overwrite, rename)
       .then(() => {
         fileStore.reload = true;

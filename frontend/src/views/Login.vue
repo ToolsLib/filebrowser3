@@ -3,12 +3,18 @@
     <form @submit="submit">
       <img :src="logoURL" alt="File Browser" />
       <h1>{{ name }}</h1>
+      <p class="login-subtitle">{{ t("ui.loginHint") }}</p>
       <p v-if="reason != null" class="logout-message">
         {{ t(`login.logout_reasons.${reason}`) }}
       </p>
-      <div v-if="error !== ''" class="wrong">{{ error }}</div>
+      <div v-if="error !== ''" class="wrong" role="alert">{{ error }}</div>
 
+      <label for="login-username">{{ t("login.username") }}</label>
       <input
+        id="login-username"
+        name="username"
+        autocomplete="username"
+        required
         autofocus
         class="input input--block"
         type="text"
@@ -16,13 +22,21 @@
         v-model="username"
         :placeholder="t('login.username')"
       />
+      <label for="login-password">{{ t("login.password") }}</label>
       <input
+        id="login-password"
+        name="password"
+        :autocomplete="createMode ? 'new-password' : 'current-password'"
+        required
         class="input input--block"
         type="password"
         v-model="password"
         :placeholder="t('login.password')"
       />
       <input
+        :aria-label="t('login.passwordConfirm')"
+        autocomplete="new-password"
+        required
         class="input input--block"
         v-if="createMode"
         type="password"
@@ -37,9 +51,14 @@
         :value="createMode ? t('login.signup') : t('login.submit')"
       />
 
-      <p @click="toggleMode" v-if="signup">
+      <button
+        type="button"
+        class="text-button signup-toggle"
+        @click="toggleMode"
+        v-if="signup"
+      >
         {{ createMode ? t("login.loginInstead") : t("login.createAnAccount") }}
-      </p>
+      </button>
     </form>
   </div>
 </template>

@@ -137,7 +137,6 @@
           @click="close"
           :aria-label="$t('buttons.cancel')"
           :title="$t('buttons.cancel')"
-          tabindex="4"
         >
           {{ $t("buttons.cancel") }}
         </button>
@@ -148,7 +147,6 @@
           @click="(event) => currentPrompt?.confirm(event, conflict)"
           :aria-label="$t('buttons.ok')"
           :title="$t('buttons.ok')"
-          tabindex="1"
         >
           {{ $t("buttons.ok") }}
         </button>

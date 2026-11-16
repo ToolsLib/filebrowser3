@@ -14,7 +14,6 @@
         @click="closeHovers"
         :aria-label="$t('buttons.cancel')"
         :title="$t('buttons.cancel')"
-        tabindex="3"
       >
         {{ $t("buttons.cancel") }}
       </button>
@@ -23,7 +22,6 @@
         @click="currentPrompt.action"
         :aria-label="$t('buttons.continue')"
         :title="$t('buttons.continue')"
-        tabindex="2"
       >
         {{ $t("buttons.continue") }}
       </button>
@@ -33,7 +31,6 @@
         @click="currentPrompt.confirm"
         :aria-label="$t('buttons.replace')"
         :title="$t('buttons.replace')"
-        tabindex="1"
       >
         {{ $t("buttons.replace") }}
       </button>

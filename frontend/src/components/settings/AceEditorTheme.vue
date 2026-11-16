@@ -4,6 +4,7 @@
     v-on:change="change"
     :value="aceEditorTheme"
   >
+    <option value="">{{ $t("ui.defaultTheme") }}</option>
     <option v-for="theme in themes" :value="theme.theme" :key="theme.theme">
       {{ theme.name }}
     </option>
