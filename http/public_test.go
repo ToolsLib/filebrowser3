@@ -284,6 +284,11 @@ func (cu *customFSUser) Get(baseScope string, followExternalSymlinks bool, id in
 	// one users.User.Clean would build in production.
 	if cu.followExternal {
 		user.Fs = cu.fs
+	} else if base, ok := cu.fs.(*afero.BasePathFs); ok {
+		// This fixture's BasePathFs instances are explicitly backed by OsFs.
+		// Production constructors require the native source rather than
+		// guessing through adapters with private implementation fields.
+		user.Fs = files.NewScopedFs(afero.NewOsFs(), afero.FullBaseFsPath(base, "/"))
 	} else {
 		user.Fs = files.NewScopedFs(cu.fs, "/")
 	}

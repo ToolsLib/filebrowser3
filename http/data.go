@@ -3,11 +3,13 @@ package fbhttp
 import (
 	"log"
 	"net/http"
+	"os"
 	gopath "path"
 	"strconv"
 
 	"github.com/tomasen/realip"
 
+	"github.com/filebrowser/filebrowser/v2/files"
 	"github.com/filebrowser/filebrowser/v2/rules"
 	"github.com/filebrowser/filebrowser/v2/runner"
 	"github.com/filebrowser/filebrowser/v2/settings"
@@ -49,7 +51,27 @@ func (d *data) CheckRules(path string) bool {
 	if internalWritePath(path) {
 		return false
 	}
-	path = d.rulePath(path)
+	paths := []string{d.rulePath(path)}
+	resolved, err := files.ResolveVirtualPath(d.user.Fs, path)
+	if err != nil {
+		if !(d.server.FollowExternalSymlinks && os.IsPermission(err)) {
+			return false
+		}
+	} else {
+		if internalWritePath(resolved) {
+			return false
+		}
+		paths = append(paths, d.rulePath(resolved))
+	}
+	for _, candidate := range paths {
+		if !d.checkRulesForPath(candidate) {
+			return false
+		}
+	}
+	return true
+}
+
+func (d *data) checkRulesForPath(path string) bool {
 
 	allow := true
 	for _, rule := range d.settings.Rules {

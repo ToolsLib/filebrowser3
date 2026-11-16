@@ -8,10 +8,12 @@ import (
 	"testing"
 
 	"github.com/filebrowser/filebrowser/v2/diskcache"
+	"github.com/filebrowser/filebrowser/v2/files"
 	"github.com/filebrowser/filebrowser/v2/rules"
 	"github.com/filebrowser/filebrowser/v2/settings"
 	"github.com/filebrowser/filebrowser/v2/storage"
 	"github.com/filebrowser/filebrowser/v2/users"
+	"github.com/spf13/afero"
 )
 
 // denyRuleStorage builds a scoped storage whose global settings deny denyPath.
@@ -66,6 +68,9 @@ func TestRuleDeniesCaseVariantWhenFsIsCaseInsensitive(t *testing.T) {
 	})
 
 	t.Run("case variant is a distinct path on a case-sensitive filesystem", func(t *testing.T) {
+		if files.CaseInsensitive(afero.NewOsFs(), userScope) {
+			t.Skip("distinct case variants require a case-sensitive backing filesystem")
+		}
 		if rec := get("/secret.TXT", false); rec.Code == http.StatusForbidden {
 			t.Error("GET /secret.TXT = 403 with folding off; the rule must not widen on a case-sensitive filesystem")
 		}
