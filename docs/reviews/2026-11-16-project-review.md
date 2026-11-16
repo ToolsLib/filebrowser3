@@ -4,7 +4,7 @@ Review date: 16 November 2026, Europe/Paris.
 
 The first priorities are destructive file operations, upload integrity, and vulnerable dependencies. The frontend builds successfully, but backend tests fail on Windows and several security defects remain in the reviewed source. Session revocation and filesystem confinement need changes beyond package updates.
 
-This review covers security and hardening, frontend dependencies and assets, Go dependencies and migration candidates, and other correctness and delivery issues. Findings remain open unless explicitly stated otherwise. Proposed goals below are planning suggestions; no implementation goal has been started and no application fixes have been applied.
+This review covers security and hardening, frontend dependencies and assets, Go dependencies and migration candidates, and other correctness and delivery issues. All 28 findings are accepted as **To fix** under the active implementation goal. See the [fix status](fix-status.md) for current progress and validation evidence. The findings and measurements below preserve the original baseline review.
 
 ## Baseline and evidence
 
