@@ -2,6 +2,7 @@ package fbhttp
 
 import (
 	"bufio"
+	"context"
 	"io"
 	"log"
 	"net/http"
@@ -16,7 +17,10 @@ import (
 )
 
 const (
-	WSWriteDeadline = 10 * time.Second
+	WSWriteDeadline    = 10 * time.Second
+	maxCommandBytes    = 16 << 10
+	commandReadTimeout = 30 * time.Second
+	commandRunTimeout  = 10 * time.Minute
 )
 
 var upgrader = websocket.Upgrader{
@@ -33,17 +37,31 @@ func wsErr(ws *websocket.Conn, r *http.Request, status int, err error) {
 	if err != nil || status >= 400 {
 		log.Printf("%s: %v %s %v", r.URL.Path, status, r.RemoteAddr, err)
 	}
-	if err := ws.WriteControl(websocket.CloseInternalServerErr, []byte(txt), time.Now().Add(WSWriteDeadline)); err != nil {
+	if err := ws.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseInternalServerErr, txt), time.Now().Add(WSWriteDeadline)); err != nil {
 		log.Print(err)
 	}
 }
 
+func writeCommandMessage(conn *websocket.Conn, body []byte) error {
+	if err := conn.SetWriteDeadline(time.Now().Add(WSWriteDeadline)); err != nil {
+		return err
+	}
+	return conn.WriteMessage(websocket.TextMessage, body)
+}
+
 var commandsHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	if !d.server.EnableExec || !d.user.Perm.Execute {
+		return http.StatusForbidden, nil
+	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 	defer conn.Close()
+	conn.SetReadLimit(maxCommandBytes)
+	if err := conn.SetReadDeadline(time.Now().Add(commandReadTimeout)); err != nil {
+		return 0, err
+	}
 
 	var raw string
 
@@ -60,59 +78,48 @@ var commandsHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *d
 		}
 	}
 
-	// Fail fast
-	if !d.server.EnableExec || !d.user.Perm.Execute {
-		if err := conn.WriteMessage(websocket.TextMessage, cmdNotAllowed); err != nil {
-			wsErr(conn, r, http.StatusInternalServerError, err)
-		}
-
-		return 0, nil
-	}
-
 	command, name, err := runner.ParseCommand(d.settings, raw)
 	if err != nil {
-		if err := conn.WriteMessage(websocket.TextMessage, []byte(err.Error())); err != nil {
+		if err := writeCommandMessage(conn, []byte(err.Error())); err != nil {
 			wsErr(conn, r, http.StatusInternalServerError, err)
 		}
 		return 0, nil
 	}
 
 	if !slices.Contains(d.user.Commands, name) {
-		if err := conn.WriteMessage(websocket.TextMessage, cmdNotAllowed); err != nil {
+		if err := writeCommandMessage(conn, cmdNotAllowed); err != nil {
 			wsErr(conn, r, http.StatusInternalServerError, err)
 		}
 
 		return 0, nil
 	}
 
-	cmd := exec.Command(command[0], command[1:]...)
+	ctx, cancel := context.WithTimeout(r.Context(), commandRunTimeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
 	cmd.Dir = d.user.FullPath(r.URL.Path)
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		wsErr(conn, r, http.StatusInternalServerError, err)
-		return 0, nil
-	}
-
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		wsErr(conn, r, http.StatusInternalServerError, err)
-		return 0, nil
-	}
+	cmd.WaitDelay = 2 * time.Second
+	output, writer := io.Pipe()
+	defer output.Close()
+	defer writer.Close()
+	cmd.Stdout, cmd.Stderr = writer, writer
 
 	if err := cmd.Start(); err != nil {
 		wsErr(conn, r, http.StatusInternalServerError, err)
 		return 0, nil
 	}
+	go func() { _ = writer.CloseWithError(cmd.Wait()) }()
 
-	s := bufio.NewScanner(io.MultiReader(stdout, stderr))
+	s := bufio.NewScanner(output)
+	s.Buffer(make([]byte, 4096), 256<<10)
 	for s.Scan() {
-		if err := conn.WriteMessage(websocket.TextMessage, s.Bytes()); err != nil {
+		if err := writeCommandMessage(conn, s.Bytes()); err != nil {
 			log.Print(err)
+			return 0, nil
 		}
 	}
 
-	if err := cmd.Wait(); err != nil {
+	if err := s.Err(); err != nil {
 		wsErr(conn, r, http.StatusInternalServerError, err)
 	}
 

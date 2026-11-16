@@ -4,7 +4,7 @@ import type { JwtPayload } from "jwt-decode";
 import { jwtDecode } from "jwt-decode";
 import { authMethod, baseURL, noAuth, logoutPage } from "./constants";
 import { StatusError } from "@/api/utils";
-import { setSafeTimeout } from "@/api/utils";
+import { setSafeTimeout } from "@/utils/timeout";
 
 export function parseToken(token: string) {
   // falsy or malformed jwt will throw InvalidTokenError
@@ -17,15 +17,12 @@ export function parseToken(token: string) {
   const authStore = useAuthStore();
   authStore.jwt = token;
   authStore.setUser(data.user);
+  authStore.logoutTimer?.();
 
   // proxy auth with custom logout subject to unknown external timeout
   if (logoutPage !== "/login" && authMethod === "proxy") {
     console.warn("idle timeout disabled with proxy auth and custom logout");
     return;
-  }
-
-  if (authStore.logoutTimer) {
-    clearTimeout(authStore.logoutTimer);
   }
 
   const expiresAt = new Date(data.exp! * 1000);

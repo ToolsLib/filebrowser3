@@ -2,6 +2,7 @@ package fbhttp
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 	"regexp"
@@ -13,6 +14,23 @@ import (
 )
 
 var srtLineBreakTag = regexp.MustCompile(`(?i)<br(?:\s+[^>]*)?\s*/?>`)
+
+const maxSubtitleInput = 10 << 20
+const maxSubtitleOutput = 16 << 20
+
+var subtitleConversions = make(chan struct{}, 2)
+var errSubtitleLimit = errors.New("subtitle conversion exceeds size limit")
+
+type subtitleBuffer struct{ bytes.Buffer }
+
+func (b *subtitleBuffer) Write(p []byte) (int, error) {
+	if len(p) > maxSubtitleOutput-b.Len() {
+		return 0, errSubtitleLimit
+	}
+	return b.Buffer.Write(p)
+}
+
+func (b *subtitleBuffer) WriteString(value string) (int, error) { return b.Write([]byte(value)) }
 
 var subtitleHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	if !d.user.Perm.Download {
@@ -44,22 +62,56 @@ func subtitleFileHandler(w http.ResponseWriter, r *http.Request, file *files.Fil
 		return http.StatusBadRequest, nil
 	}
 
+	info, err := file.Fs.Stat(file.Path)
+	if err != nil {
+		return errToStatus(err), err
+	}
+	if !info.Mode().IsRegular() {
+		return http.StatusBadRequest, nil
+	}
+	if info.Size() > maxSubtitleInput {
+		return http.StatusRequestEntityTooLarge, errSubtitleLimit
+	}
 	fd, err := file.Fs.Open(file.Path)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 	defer fd.Close()
+	info, err = fd.Stat()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	if !info.Mode().IsRegular() {
+		return http.StatusBadRequest, nil
+	}
+	if info.Size() > maxSubtitleInput {
+		return http.StatusRequestEntityTooLarge, errSubtitleLimit
+	}
+	converting := !strings.EqualFold(file.Extension, ".vtt") && !strings.HasSuffix(strings.ToLower(file.Name), ".vtt")
+	if converting {
+		select {
+		case subtitleConversions <- struct{}{}:
+			defer func() { <-subtitleConversions }()
+		default:
+			return http.StatusTooManyRequests, nil
+		}
+	}
 
 	// load subtitle for conversion to vtt
 	var sub *astisub.Subtitles
-	if strings.HasSuffix(file.Name, ".srt") {
-		content, readErr := io.ReadAll(fd)
+	if converting {
+		content, readErr := io.ReadAll(io.LimitReader(fd, maxSubtitleInput+1))
 		if readErr != nil {
 			return http.StatusInternalServerError, readErr
 		}
-		sub, err = astisub.ReadFromSRT(bytes.NewReader(normalizeSRTLineBreaks(content)))
-	} else if strings.HasSuffix(file.Name, ".ass") || strings.HasSuffix(file.Name, ".ssa") {
-		sub, err = astisub.ReadFromSSA(fd)
+		if len(content) > maxSubtitleInput {
+			return http.StatusRequestEntityTooLarge, errSubtitleLimit
+		}
+		if strings.HasSuffix(strings.ToLower(file.Name), ".srt") {
+			sub, err = astisub.ReadFromSRT(bytes.NewReader(normalizeSRTLineBreaks(content)))
+		} else {
+			sub, err = astisub.ReadFromSSA(bytes.NewReader(content))
+		}
 	}
 	if err != nil {
 		return http.StatusInternalServerError, err
@@ -78,9 +130,12 @@ func subtitleFileHandler(w http.ResponseWriter, r *http.Request, file *files.Fil
 	}
 
 	// convert others to vtt and serve from buffer
-	var buf = &bytes.Buffer{}
+	var buf = &subtitleBuffer{}
 	err = sub.WriteToWebVTT(buf)
 	if err != nil {
+		if errors.Is(err, errSubtitleLimit) {
+			return http.StatusRequestEntityTooLarge, err
+		}
 		return http.StatusInternalServerError, err
 	}
 	http.ServeContent(w, r, file.Name, file.ModTime, bytes.NewReader(buf.Bytes()))

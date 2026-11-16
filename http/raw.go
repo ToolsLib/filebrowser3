@@ -112,6 +112,9 @@ func getFiles(d *data, path, commonPath string) ([]archives.FileInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	if !info.IsDir() && !info.Mode().IsRegular() {
+		return nil, nil
+	}
 
 	var archiveFiles []archives.FileInfo
 

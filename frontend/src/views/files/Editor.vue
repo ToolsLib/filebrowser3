@@ -212,8 +212,7 @@ onBeforeRouteUpdate((to, from, next) => {
       next();
     },
     saveAction: async () => {
-      await save();
-      next();
+      if (await save()) next();
     },
   });
 });
@@ -266,7 +265,7 @@ const handlePageChange = (event: BeforeUnloadEvent) => {
   }
 };
 
-const save = async (throwError?: boolean) => {
+const save = async (): Promise<boolean> => {
   const button = "save";
   buttons.loading("save");
 
@@ -274,10 +273,11 @@ const save = async (throwError?: boolean) => {
     await api.put(route.path, editor.value?.getValue());
     editor.value?.session.getUndoManager().markClean();
     buttons.success(button);
+    return true;
   } catch (e: any) {
     buttons.done(button);
     $showError(e);
-    if (throwError) throw e;
+    return false;
   }
 };
 
@@ -305,10 +305,7 @@ const close = () => {
         finishClose();
       },
       saveAction: async () => {
-        try {
-          await save(true);
-          finishClose();
-        } catch {}
+        if (await save()) finishClose();
       },
     });
     return;
