@@ -2,7 +2,7 @@
 
 Started: 16 November 2026.
 
-All 28 findings from the [project review](2026-11-16-project-review.md) were accepted as to fix and are now resolved. Validation evidence and local commits are recorded below. No remote or release tag is configured.
+All 28 findings from the [project review](2026-11-16-project-review.md) were accepted as to fix and are now resolved. Validation evidence and local commits are recorded below. No remote or release tag is configured. See the [completion report](2026-11-16-completion-report.md) for results, migration notes and verification limits.
 
 Status values: **To fix**, **In progress**, **Fixed**. A finding is fixed only after its implementation or verified disposition and appropriate checks are recorded.
 
