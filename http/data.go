@@ -46,6 +46,9 @@ func (d *data) Check(path string) bool {
 // Check, it ignores HideDotfiles: hiding dotfiles is a display preference, so
 // it must not stop a user from operating on a tree that contains one.
 func (d *data) CheckRules(path string) bool {
+	if internalWritePath(path) {
+		return false
+	}
 	path = d.rulePath(path)
 
 	allow := true

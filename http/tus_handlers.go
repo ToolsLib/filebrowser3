@@ -61,6 +61,15 @@ func tusPostHandler(cache UploadCache) handleFunc {
 		if !d.user.Perm.Create || !d.Check(r.URL.Path) {
 			return http.StatusForbidden, nil
 		}
+		uploadLength, err := getUploadLength(r)
+		if err != nil || uploadLength < 0 {
+			return http.StatusBadRequest, fmt.Errorf("invalid upload length")
+		}
+		unlock, err := lockFileMutation(r.Context(), d.user.FullPath(r.URL.Path))
+		if err != nil {
+			return http.StatusRequestTimeout, err
+		}
+		defer unlock()
 
 		file, err := files.NewFileInfo(&files.FileOptions{
 			Fs:         d.user.Fs,
@@ -120,11 +129,6 @@ func tusPostHandler(cache UploadCache) handleFunc {
 		})
 		if err != nil {
 			return errToStatus(err), err
-		}
-
-		uploadLength, err := getUploadLength(r)
-		if err != nil || uploadLength < 0 {
-			return http.StatusBadRequest, fmt.Errorf("invalid upload length: %w", err)
 		}
 
 		// Enables the user to utilize the PATCH endpoint for uploading file data.
@@ -198,9 +202,14 @@ func tusPatchUpload(w http.ResponseWriter, r *http.Request, d *data, cache Uploa
 	}
 
 	uploadOffset, err := getUploadOffset(r)
-	if err != nil {
+	if err != nil || uploadOffset < 0 {
 		return http.StatusBadRequest, fmt.Errorf("invalid upload offset")
 	}
+	unlock, err := lockFileMutation(r.Context(), d.user.FullPath(r.URL.Path))
+	if err != nil {
+		return http.StatusRequestTimeout, err
+	}
+	defer unlock()
 
 	file, err := files.NewFileInfo(&files.FileOptions{
 		Fs:         d.user.Fs,
@@ -242,7 +251,7 @@ func tusPatchUpload(w http.ResponseWriter, r *http.Request, d *data, cache Uploa
 		)
 	}
 
-	openFile, err := d.user.Fs.OpenFile(r.URL.Path, os.O_WRONLY|os.O_APPEND, d.settings.FileMode)
+	openFile, err := d.user.Fs.OpenFile(r.URL.Path, os.O_WRONLY, d.settings.FileMode)
 	if err != nil {
 		return http.StatusInternalServerError, fmt.Errorf("could not open file: %w", err)
 	}
@@ -265,6 +274,9 @@ func tusPatchUpload(w http.ResponseWriter, r *http.Request, d *data, cache Uploa
 	remaining := uploadLength - uploadOffset
 	bytesWritten, err := io.Copy(openFile, io.LimitReader(r.Body, remaining+1))
 	if err != nil {
+		if truncErr := openFile.Truncate(uploadOffset); truncErr != nil {
+			return http.StatusInternalServerError, fmt.Errorf("could not roll back failed chunk: %w", truncErr)
+		}
 		return http.StatusInternalServerError, fmt.Errorf("could not write to file: %w", err)
 	}
 	if bytesWritten > remaining {

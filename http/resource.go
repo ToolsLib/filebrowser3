@@ -135,6 +135,11 @@ func resourcePostHandler(fileCache FileCache) handleFunc {
 		if !d.user.Perm.Create || !d.Check(r.URL.Path) {
 			return http.StatusForbidden, nil
 		}
+		unlock, err := lockFileMutation(r.Context(), d.user.FullPath(r.URL.Path))
+		if err != nil {
+			return http.StatusRequestTimeout, err
+		}
+		defer unlock()
 
 		// Directories creation on POST.
 		if strings.HasSuffix(r.URL.Path, "/") {
@@ -153,6 +158,9 @@ func resourcePostHandler(fileCache FileCache) handleFunc {
 			Checker:    d,
 		})
 		if err == nil {
+			if file.IsDir {
+				return http.StatusBadRequest, fmt.Errorf("cannot upload to a directory")
+			}
 			if r.URL.Query().Get("override") != "true" {
 				return http.StatusConflict, nil
 			}
@@ -166,6 +174,8 @@ func resourcePostHandler(fileCache FileCache) handleFunc {
 			if err != nil {
 				return errToStatus(err), err
 			}
+		} else if !os.IsNotExist(err) {
+			return errToStatus(err), err
 		}
 
 		err = d.RunHook(func() error {
@@ -179,10 +189,6 @@ func resourcePostHandler(fileCache FileCache) handleFunc {
 			return nil
 		}, "upload", r.URL.Path, "", d.user)
 
-		if err != nil {
-			_ = d.user.Fs.RemoveAll(r.URL.Path)
-		}
-
 		return errToStatus(err), err
 	})
 }
@@ -191,6 +197,11 @@ var resourcePutHandler = withUser(func(w http.ResponseWriter, r *http.Request, d
 	if !d.user.Perm.Modify || !d.Check(r.URL.Path) {
 		return http.StatusForbidden, nil
 	}
+	unlock, err := lockFileMutation(r.Context(), d.user.FullPath(r.URL.Path))
+	if err != nil {
+		return http.StatusRequestTimeout, err
+	}
+	defer unlock()
 
 	// Only allow PUT for files.
 	if strings.HasSuffix(r.URL.Path, "/") {
@@ -350,11 +361,25 @@ func writeFile(afs afero.Fs, dst string, in io.Reader, fileMode, dirMode fs.File
 		return nil, err
 	}
 
-	file, err := afs.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
+	// Write and sync a sibling first. A failed body, sync, close, or rename
+	// must never truncate or delete the previous destination.
+	if previous, statErr := afs.Stat(dst); statErr == nil {
+		if previous.IsDir() {
+			return nil, fmt.Errorf("cannot replace a directory with a file")
+		}
+		fileMode = previous.Mode().Perm()
+	} else if !os.IsNotExist(statErr) {
+		return nil, statErr
+	}
+	file, err := afero.TempFile(afs, dir, internalWritePrefix)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	temporary := file.Name()
+	defer func() {
+		_ = file.Close()
+		_ = afs.Remove(temporary)
+	}()
 
 	_, err = io.Copy(file, in)
 	if err != nil {
@@ -366,9 +391,18 @@ func writeFile(afs afero.Fs, dst string, in io.Reader, fileMode, dirMode fs.File
 	if err := file.Sync(); err != nil {
 		return nil, err
 	}
+	if err := file.Close(); err != nil {
+		return nil, err
+	}
+	if err := afs.Chmod(temporary, fileMode); err != nil {
+		return nil, err
+	}
+	if err := afs.Rename(temporary, dst); err != nil {
+		return nil, err
+	}
 
 	// Gets the info about the file.
-	info, err := file.Stat()
+	info, err := afs.Stat(dst)
 	if err != nil {
 		return nil, err
 	}
