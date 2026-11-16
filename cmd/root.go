@@ -90,7 +90,7 @@ func init() {
 	flags.String("password", "", "hashed password for the first user when using quick setup")
 	flags.Uint32("socketPerm", 0666, "unix socket file permissions")
 	flags.String("cacheDir", "", "file cache directory (disabled if empty)")
-	flags.String("redisCacheUrl", "", "redis cache URL (for multi-instance deployments), e.g. redis://user:pass@host:port")
+	flags.String("redisCacheUrl", "", "shared resumable-upload cache URL (does not share accounts or sessions), e.g. redis://user:pass@host:port")
 	flags.Int("imageProcessors", 4, "image processors count")
 	addServerFlags(flags)
 }
@@ -195,10 +195,7 @@ user created with the credentials from options "username" and "password".`,
 		}
 		setupLog(server.Log)
 
-		log.Println("NOTICE: File Browser is being wound down.")
-		log.Println("NOTICE: The project is archived on 2026-09-01, after which there will be no")
-		log.Println("NOTICE: further releases and no security fixes. Known unfixed issues are at")
-		log.Println("NOTICE: https://github.com/filebrowser/filebrowser/security/advisories")
+		log.Println("Local fork of archived File Browser; see docs/reviews/fix-status.md for hardening and docs/sessions.md for session migration.")
 
 		root, err := filepath.Abs(server.Root)
 		if err != nil {

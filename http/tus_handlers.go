@@ -101,16 +101,17 @@ func commitUpload(d *data, name, key string, state UploadState, cache UploadCach
 		return uploadCacheStatus(err), err
 	}
 	current, err := d.user.Fs.Stat(name)
-	if state.Existed {
+	switch {
+	case state.Existed:
 		if !d.user.Perm.Modify {
 			return http.StatusForbidden, nil
 		}
 		if err != nil || current.IsDir() || current.Size() != state.OriginalSize || current.ModTime().UnixNano() != state.OriginalModified {
 			return http.StatusConflict, fmt.Errorf("destination changed during upload")
 		}
-	} else if err == nil {
+	case err == nil:
 		return http.StatusConflict, fmt.Errorf("destination was created during upload")
-	} else if !os.IsNotExist(err) {
+	case !os.IsNotExist(err):
 		return errToStatus(err), err
 	}
 	if err := d.user.Fs.Chmod(state.Stage, os.FileMode(state.Mode)); err != nil {

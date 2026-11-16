@@ -46,6 +46,25 @@ test("production login, local Ace, save and lazy previews work under CSP", async
     /fb_access|fb_refresh/
   );
   await expect(page).toHaveURL(/\/files\//);
+  const uploaded = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/tus/browser-upload.txt") &&
+      response.request().method() === "PATCH" &&
+      response.status() === 204
+  );
+  await page
+    .locator("#upload-input")
+    .first()
+    .setInputFiles({
+      name: "browser-upload.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("Browser TUS upload"),
+    });
+  await uploaded;
+  const uploadedFile = await page.request.get("api/raw/browser-upload.txt", {
+    headers: { "X-Auth": accessToken },
+  });
+  expect(await uploadedFile.text()).toBe("Browser TUS upload");
   await page.goto("files/review.md");
   await expect(page.locator(".ace_editor")).toBeVisible();
   await expect(page.locator(".ace_editor")).toContainText("Review fixture");

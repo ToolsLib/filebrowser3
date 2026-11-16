@@ -1,13 +1,13 @@
 # Building File Browser
 
-This project is archived on 2026-09-01. Pull requests are not accepted and no further changes are merged. This document is kept as build documentation for anyone wishing to build the project from source.
+Upstream File Browser was archived on 2026-09-01. This checkout is a local fork with its own review and hardening work; see [fix status](docs/reviews/fix-status.md).
 
 ## Project Structure
 
 The backend side of the application is written in [Go](https://golang.org/), while the frontend (located on a subdirectory of the same name) is written in [Vue.js](https://vuejs.org/). Due to the tight coupling required by some features, basic knowledge of both Go and Vue.js is recommended.
 
-* Learn Go: [https://github.com/golang/go/wiki/Learn](https://github.com/golang/go/wiki/Learn)
-* Learn Vue.js: [https://vuejs.org/guide/introduction.html](https://vuejs.org/guide/introduction.html)
+- Learn Go: [https://github.com/golang/go/wiki/Learn](https://github.com/golang/go/wiki/Learn)
+- Learn Vue.js: [https://vuejs.org/guide/introduction.html](https://vuejs.org/guide/introduction.html)
 
 We encourage you to use git to manage your fork. To clone the main repository, just run:
 
@@ -19,11 +19,17 @@ We use [Taskfile](https://taskfile.dev/) to manage the different processes (buil
 
 ## Build
 
+Use Go 1.27.4 for normal builds; Go 1.26.11 is the tested minimum. Node 24.22.2 and the pnpm version pinned in `frontend/package.json` build the assets. CI tests both Go toolchains on Linux and Windows and fails if an unpatched compiler is substituted. `GOTOOLCHAIN=local` makes a chosen test compiler explicit.
+
 You can fully build the project in order to produce a binary by running:
 
 ```bash
 task build
 ```
+
+Without Task, run `pnpm install --frozen-lockfile` and `pnpm build` in `frontend`, then `go run ./tools/build` in the repository root. The helper emits `filebrowser.exe` on Windows and `filebrowser` on other platforms. An exact version tag supplies release metadata; otherwise the version is `0.0.0-dev+<commit>`, with `.dirty` when appropriate. A source archive without Git reports `0.0.0-dev+unknown`. It never needs a tag or remote to build locally.
+
+Frontend/unit/browser checks are documented in [frontend maintenance](docs/frontend-maintenance.md). Backend checks are `go test ./...`, `go vet ./...`, and `golangci-lint run --timeout 5m` (v2.15.0). Linux also runs the race detector. `govulncheck` v1.9.0 and full-tree `pnpm audit` are release prerequisites. Vulnerabilities must be fixed or receive a specific, reviewed applicability decision; do not disable checks to ship an update.
 
 ## Development
 
@@ -53,7 +59,7 @@ If you want to develop the frontend, start a development server which watches fo
 pnpm run dev
 ```
 
-Please note that you need to access File Browser's interface through the development server of the frontend.
+Access the interface through the frontend development server. For loopback HTTP backend development, use `--insecureCookies`; leave it off in production. The Vite development server proxies API/WebSocket requests to the backend.
 
 ### Backend
 
@@ -83,11 +89,9 @@ task docs:cli:generate
 
 ## Release
 
-To make a release, just run:
+No release tags or remote are created by normal builds. After an operator configures the intended remote and explicitly creates a version tag, the GitHub Actions release job waits for frontend/browser tests, backend lint, Windows/Linux tests, Redis integration, vulnerability scans and a local build. It publishes binary archives and checksums to that repository using a job-scoped contents-write token. Inherited upstream Docker Hub and Homebrew publishing targets were removed. Container builds remain local through `Dockerfile.source` and Compose.
 
-```bash
-task release
-```
+GoReleaser is pinned to v2.20.2. Its full `check`/release validation requires a configured SCM remote. In the intentionally remote-free local repository, its configuration is checked against that version's JSON schema; live release publishing remains unexercised. A remote should be configured only when the operator is ready to publish.
 
 ## Translations
 
@@ -112,4 +116,3 @@ After implementing the interface you should:
 3. Add it to the [`authBackend.Get`](https://github.com/filebrowser/filebrowser/blob/master/storage/bolt/auth.go).
 
 If you need to add more flags, please update the function `addConfigFlags`.
-

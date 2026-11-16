@@ -34,7 +34,8 @@ type data struct {
 	// done for public shares), so that rules — which are relative to the user's
 	// original scope — are still matched against the real path instead of the
 	// rebased one. Empty for regular requests.
-	checkerPrefix string
+	checkerPrefix         string
+	resolvedCheckerPrefix string
 }
 
 // Check implements rules.Checker.
@@ -56,14 +57,18 @@ func (d *data) CheckRules(path string) bool {
 	paths := []string{d.rulePath(path)}
 	resolved, err := files.ResolveVirtualPath(d.user.Fs, path)
 	if err != nil {
-		if !(d.server.FollowExternalSymlinks && os.IsPermission(err)) {
+		if !d.server.FollowExternalSymlinks || !os.IsPermission(err) {
 			return false
 		}
 	} else {
 		if internalWritePath(resolved) {
 			return false
 		}
-		paths = append(paths, d.rulePath(resolved))
+		if d.resolvedCheckerPrefix != "" {
+			paths = append(paths, gopath.Join(d.resolvedCheckerPrefix, slashClean(resolved)))
+		} else {
+			paths = append(paths, d.rulePath(resolved))
+		}
 	}
 	for _, candidate := range paths {
 		if !d.checkRulesForPath(candidate) {

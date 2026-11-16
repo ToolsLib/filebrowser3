@@ -1,30 +1,9 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+This checkout is a local fork of archived upstream File Browser. The November 2026 review and its remediation are tracked in [fix status](docs/reviews/fix-status.md). Upstream release binaries and Docker images do not contain these local changes. No public release, remote repository or external security reporting channel is configured for this fork yet.
 
-No version receives security fixes. The last planned release has already shipped and no further changes will be merged.
+Report a newly discovered issue privately to the operator or maintainer of the deployment you are using. Include the exact local commit, affected configuration, reproducible steps using temporary data, and expected versus observed behavior. Review upstream advisories for inherited behavior, and distinguish the code in this fork from upstream releases.
 
-| Version | Supported |
-| ------- | --------- |
-| 2.x     | ❌        |
-| < 2.0   | ❌        |
+The command runner and hooks remain trusted shell-equivalent functionality and are disabled by default. Filesystem roots and their ancestors must be operator-controlled. The explicit external-symlink option removes confinement and should remain disabled. Authentication uses one server process per Bolt database; Redis upload coordination does not make independent account/session databases consistent. See [sessions](docs/sessions.md), [request limits](docs/request-limits.md) and [deployment](docs/deployment.md) for supported boundaries.
 
-## Before Reporting
-
-This project is being wound down. To avoid duplicates, first check the [existing advisories](https://github.com/filebrowser/filebrowser/security/advisories) and open issues, and confirm:
-
-- **It concerns this project, not a fork.** Reports about code, features, or endpoints that don't exist here belong to the relevant fork.
-- **It isn't an already-known class** that remains unaddressed. Those are listed under [Security](README.md#security) in the README; reports covering them are likely to be closed as duplicates.
-
-## Reporting a Vulnerability
-
-Until 2026-09-01, report privately via the [Security](https://github.com/filebrowser/filebrowser/security) page. After that date this repository is read-only and reports can no longer be submitted.
-
-Please include, where possible:
-
-- The commit the issue was found at
-- A plaintext proof of concept (no binaries)
-- Steps to reproduce
-- Recommended remediation, if any
-
-No fix will ship for any report: the last planned release has already shipped and no further changes will be merged. Reports may still be published as advisories so that people running File Browser can assess their exposure.
+Local validation and resolved review findings are evidence for the tested configurations, not a guarantee that all possible defects have been found. The completion report records the checks and remaining operational limitations.

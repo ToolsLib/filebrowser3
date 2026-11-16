@@ -47,11 +47,12 @@ func TestPersistentAtomicRotationAndRevocation(t *testing.T) {
 	close(results)
 	succeeded, failed := 0, 0
 	for err := range results {
-		if err == nil {
+		switch {
+		case err == nil:
 			succeeded++
-		} else if errors.Is(err, ErrInvalid) {
+		case errors.Is(err, ErrInvalid):
 			failed++
-		} else {
+		default:
 			t.Fatal(err)
 		}
 	}

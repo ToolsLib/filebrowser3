@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 tasks:
   build:frontend:
@@ -11,12 +11,7 @@ tasks:
   build:backend:
     desc: Build backend binary
     cmds:
-      - go build -ldflags='-s -w -X "github.com/filebrowser/filebrowser/v2/version.Version={{.VERSION}}" -X "github.com/filebrowser/filebrowser/v2/version.CommitSHA={{.GIT_COMMIT}}"' -o filebrowser .
-    vars:
-      GIT_COMMIT:
-        sh: git log -n 1 --format=%h
-      VERSION:
-        sh: git describe --tags --abbrev=0 --match=v* | cut -c 2-
+      - go run ./tools/build
 
   build:
     desc: Build both frontend and backend
@@ -24,34 +19,8 @@ tasks:
       - task: build:frontend
       - task: build:backend
 
-  release:make:
-    internal: true
-    prompt: Do you wish to proceed?
-    cmds:
-      - pnpm dlx commit-and-tag-version -s
-
-  release:dry-run:
-    internal: true
-    cmds:
-      - pnpm dlx commit-and-tag-version --dry-run --skip
-
-  release:
-    desc: Create a new release
-    cmds:
-      - task: docs:cli:generate
-      - git add docs/cli
-      - |
-        if [[ `git status docs/cli --porcelain` ]]; then
-          git commit -m 'chore(docs): update CLI documentation'
-        fi
-      - task: release:dry-run
-      - task: release:make
-
   docs:cli:generate:
     cmds:
-      - rm -rf docs/cli
-      - mkdir -p docs/cli
       - go run . docs
     generates:
       - docs/cli
-

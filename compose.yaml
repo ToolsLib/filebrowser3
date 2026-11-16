@@ -1,32 +1,75 @@
 services:
   filebrowser:
-    container_name: filebrowser
-    image: filebrowser/filebrowser:latest
-    networks:
-      - filebrowser
+    image: filebrowser-next:local
+    build:
+      context: .
+      dockerfile: Dockerfile.source
+    user: "1000:1000"
+    init: true
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 1g
+    cpus: 1.0
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
     ports:
-      - 8000:80
-    volumes:
-      - filebrowser:/flux/vault
+      - "127.0.0.1:${FB_HTTP_PORT:-8000}:8080"
     environment:
-      - FB_REDIS_CACHE_URL=redis://default:filebrowser@redis:6379 # Use rediss:// for ssl
-
+      FB_USERNAME: "${FB_USERNAME:-admin}"
+      FB_DISABLE_EXEC: "true"
+    volumes:
+      - served-files:/srv
+      - application-config:/config
+      - application-database:/database
+    secrets:
+      - redis_password
+      - filebrowser_password_hash
+    networks: [filebrowser, web]
+    depends_on:
+      redis:
+        condition: service_healthy
   redis:
-    container_name: redis
-    image: redis:latest
-    networks:
-      - filebrowser
-    command:
-      - sh
-      - -c
-      - |
-        cat > /tmp/users.acl <<EOF
-        user default on >filebrowser ~* +@all
-        EOF
-        redis-server --aclfile /tmp/users.acl
-
+    image: redis:8.6.8-alpine3.23@sha256:91c71f9ea78fa3fe268ff832a985c48e592244f707993773f8b3e1b244ac1137
+    user: "999:999"
+    init: true
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 0.5
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    entrypoint: [sh, /usr/local/bin/filebrowser-redis-entrypoint]
+    volumes:
+      - redis-data:/data
+      - ./docker/local/redis-entrypoint.sh:/usr/local/bin/filebrowser-redis-entrypoint:ro
+    secrets: [redis_password]
+    networks: [filebrowser]
+    healthcheck:
+      test:
+        [
+          CMD-SHELL,
+          'REDISCLI_AUTH="$$(cat /run/secrets/redis_password)" redis-cli --user filebrowser ping | grep -qx PONG',
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 networks:
   filebrowser:
-
+    internal: true
+  web:
 volumes:
-  filebrowser:
+  served-files:
+  application-config:
+  application-database:
+  redis-data:
+secrets:
+  redis_password:
+    file: ./secrets/redis_password
+  filebrowser_password_hash:
+    file: ./secrets/filebrowser_password_hash

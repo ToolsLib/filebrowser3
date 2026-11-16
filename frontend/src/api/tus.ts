@@ -2,6 +2,7 @@ import * as tus from "tus-js-client";
 import { baseURL, tusEndpoint, tusSettings, origin } from "@/utils/constants";
 import { useAuthStore } from "@/stores/auth";
 import { removePrefix } from "@/api/utils";
+import { renew } from "@/utils/auth";
 
 const RETRY_BASE_DELAY = 1000;
 const RETRY_MAX_DELAY = 20000;
@@ -34,16 +35,19 @@ export async function upload(
       retryDelays: computeRetryDelays(tusSettings),
       parallelUploads: 1,
       storeFingerprintForResuming: false,
-      headers: {
-        "X-Auth": authStore.jwt,
+      onBeforeRequest(request) {
+        request.setHeader("X-Auth", authStore.jwt);
+      },
+      async onAfterResponse(_request, response) {
+        if (response.getHeader("X-Renew-Token") === "true") await renew();
       },
       onShouldRetry: function (err) {
         const status = err.originalResponse
           ? err.originalResponse.getStatus()
           : 0;
 
-        // Do not retry for file conflict.
-        if (status === 409) {
+        // Authentication and validation failures need a user action.
+        if ([400, 401, 403, 409, 413].includes(status)) {
           return false;
         }
 

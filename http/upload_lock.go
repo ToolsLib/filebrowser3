@@ -16,7 +16,7 @@ func lockUploadStage(ctx context.Context, fs afero.Fs, stage string) (func(), er
 	if err != nil {
 		return nil, err
 	}
-	var underlying afero.File = file
+	underlying := file
 	for {
 		base, ok := underlying.(*afero.BasePathFile)
 		if !ok {

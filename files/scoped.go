@@ -325,7 +325,7 @@ func (s *ScopedFs) Rename(oldname, newname string) error {
 		return err
 	}
 	defer root.Close()
-	newRoot, new, err := s.resolve(newname, false)
+	newRoot, destination, err := s.resolve(newname, false)
 	if err != nil {
 		return err
 	}
@@ -336,7 +336,7 @@ func (s *ScopedFs) Rename(oldname, newname string) error {
 	if !sameRoot {
 		return os.ErrPermission
 	}
-	return root.Rename(old, new)
+	return root.Rename(old, destination)
 }
 func (s *ScopedFs) Stat(name string) (os.FileInfo, error) {
 	if !s.native {
@@ -394,7 +394,7 @@ func (s *ScopedFs) Chown(name string, uid, gid int) error {
 		return err
 	}
 	defer file.Close()
-	return file.(*scopedFile).File.Chown(uid, gid)
+	return file.(*scopedFile).Chown(uid, gid)
 }
 func (s *ScopedFs) Chtimes(name string, atime, mtime time.Time) error {
 	if !s.native {

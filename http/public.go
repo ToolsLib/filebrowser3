@@ -56,6 +56,13 @@ var withHashFile = func(fn handleFunc) handleFunc {
 		// filesystem and checkerPrefix below, and a stored path that is not
 		// "/"-separated would make the two disagree on Windows.
 		basePath := slashClean(link.Path)
+		resolvedBasePath, resolveErr := files.ResolveVirtualPath(d.user.Fs, basePath)
+		if resolveErr != nil {
+			if !d.server.FollowExternalSymlinks {
+				return http.StatusForbidden, resolveErr
+			}
+			resolvedBasePath = basePath
+		}
 
 		// file relative path
 		filePath := ""
@@ -75,6 +82,7 @@ var withHashFile = func(fn handleFunc) handleFunc {
 		// rule checker are relative to it. Resolve them back to the user's
 		// original scope so deny rules below the share root keep applying.
 		d.checkerPrefix = basePath
+		d.resolvedCheckerPrefix = resolvedBasePath
 
 		file, err = files.NewFileInfo(&files.FileOptions{
 			Fs:      d.user.Fs,

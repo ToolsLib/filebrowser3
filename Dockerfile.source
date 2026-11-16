@@ -1,0 +1,25 @@
+# syntax=docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+FROM node:24.22.2-alpine3.23@sha256:0efee1e068d21f6edcab7fa8c962fc4ecd50d4e28727bc23963379b63ee318ab AS assets
+WORKDIR /app
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile
+COPY frontend/ ./
+RUN pnpm build
+
+FROM golang:1.27.4-alpine3.23@sha256:f70850ef6ce341e8b6427f677049145d63c0b7ce002d4d7e3d464828b1b96dcd AS backend
+WORKDIR /src
+ENV CGO_ENABLED=0 GOTOOLCHAIN=local
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
+COPY . .
+COPY --from=assets /app/dist ./frontend/dist
+RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build go run ./tools/build -o /filebrowser
+
+FROM alpine:3.23.8@sha256:469c9ea410b9215eaee7976ba6c0639039b444be8e5d638f7abbada189971eb2
+RUN apk add --no-cache ca-certificates && addgroup -g 1000 app && adduser -D -u 1000 -G app app && mkdir -p /srv /database /config && chown app:app /srv /database /config
+COPY --from=backend /filebrowser /usr/local/bin/filebrowser
+COPY --chmod=0555 docker/local/filebrowser-entrypoint.sh /usr/local/bin/filebrowser-entrypoint
+USER 1000:1000
+EXPOSE 8080
+HEALTHCHECK --interval=15s --timeout=3s --start-period=15s CMD wget -q --spider http://127.0.0.1:8080/health || exit 1
+ENTRYPOINT ["/usr/local/bin/filebrowser-entrypoint"]

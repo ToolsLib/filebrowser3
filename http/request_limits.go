@@ -147,7 +147,15 @@ func requestLimits(next http.Handler, server *settings.Server) http.Handler {
 			}
 		}
 		controller := http.NewResponseController(w)
-		defer controller.SetReadDeadline(time.Time{})  //nolint:errcheck
+		_ = controller.SetReadDeadline(time.Now().Add(streamIdleTimeout))
+		originalBody := r.Body
+		defer func() {
+			// Keep a deadline while the server drains an early-rejected body.
+			if originalBody != nil {
+				_ = originalBody.Close()
+			}
+			_ = controller.SetReadDeadline(time.Time{})
+		}()
 		defer controller.SetWriteDeadline(time.Time{}) //nolint:errcheck
 		if r.Body != nil {
 			stream := ((r.Method == http.MethodPost || r.Method == http.MethodPut) && strings.HasPrefix(r.URL.Path, "/api/resources")) || (r.Method == http.MethodPatch && strings.HasPrefix(r.URL.Path, "/api/tus"))
@@ -156,14 +164,14 @@ func requestLimits(next http.Handler, server *settings.Server) http.Handler {
 				maximum = uploadSizeLimit(server)
 			}
 			if r.ContentLength > maximum {
-				http.Error(w, "413 Request Entity Too Large", 413)
+				http.Error(w, "413 Request Entity Too Large", http.StatusRequestEntityTooLarge)
 				return
 			}
 			r.Body = http.MaxBytesReader(w, &idleBody{ReadCloser: r.Body, controller: controller}, maximum)
 			if !stream {
 				body, err := io.ReadAll(r.Body)
 				if err != nil {
-					http.Error(w, "413 Request Entity Too Large", 413)
+					http.Error(w, "413 Request Entity Too Large", http.StatusRequestEntityTooLarge)
 					return
 				}
 				r.Body = io.NopCloser(bytes.NewReader(body))

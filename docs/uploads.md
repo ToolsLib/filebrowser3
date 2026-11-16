@@ -12,6 +12,8 @@ Canceling an upload removes only its staging files. The user needs Create permis
 
 The memory cache supports one server process. Redis stores upload generations shared by multiple instances. Registration is atomic, state failures reach the caller, and completion/heartbeat operations compare generation IDs so delayed requests cannot affect replacements.
 
+The supported application authentication topology is one process per Bolt database; see [sessions](sessions.md). Cross-process upload/cache tests verify the coordination component in isolation. A future deployment with a shared identity backend also needs the storage and lock guarantees described here.
+
 Concurrent chunks are serialized with an OS advisory lock beside their staging file, including requests handled by different processes. A process crash releases the OS lock. Multi-instance deployments must mount shared storage at the same absolute paths and use a filesystem whose advisory locking works across those instances. Redis alone does not make independent filesystems or storage without distributed advisory locks safe. Test the lock behavior of the intended storage before using multiple replicas.
 
 ## Expiry and outages
@@ -20,7 +22,7 @@ Upload state expires after three minutes without activity. Transfers refresh the
 
 If registration or a required state operation fails, the server does not publish a replacement. A failed cache deletion after a successful final rename is logged; it cannot undo the committed file. Cleanup always targets the generation's staging names. It never removes the published destination. Completion hooks run once after publication; hook failures are logged rather than reporting a completed transfer as an uncommitted write.
 
-A restart of a memory-backed server loses pending upload state. Redis-backed pending uploads can resume on another instance while their state is alive. Crashes can leave private journals and staging files without a cleanup callback. Use the cleanup command to collect these orphans.
+A restart of a memory-backed server loses pending upload state. Redis-backed pending uploads can resume after restart while their state is alive; cross-cache-instance recovery is tested separately from application authentication. Crashes can leave private journals and staging files without a cleanup callback. Use the cleanup command to collect these orphans.
 
 ## Collecting orphaned staging files
 

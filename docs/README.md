@@ -4,7 +4,7 @@
 
 > [!WARNING]
 >
-> **File Browser is archived on 2026-09-01.** There will be no further releases and no security fixes. Existing releases and Docker images stay online. For the known unaddressed security issues and hardening guidance, read the [README](../README.md#security).
+> Upstream File Browser was archived on 2026-09-01. This local fork includes later hardening; see the [current fix status](reviews/fix-status.md), [session migration](sessions.md), and [deployment guidance](deployment.md).
 
 File Browser provides a file managing interface within a specified directory and it can be used to upload, delete, preview and edit your files. It is a **create-your-own-cloud**-kind of software where you can just install it on your server, direct it to a path and access your files through a nice web interface.
 
