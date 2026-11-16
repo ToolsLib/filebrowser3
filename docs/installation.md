@@ -4,7 +4,7 @@ File Browser is a single binary and can be used as standalone executable. Howeve
 
 ## Binary
 
-The quickest and easiest way to install File Browser is to use a package manager, or our download script, which automatically fetches the latest version of File Browser for your platform. Alternatively, you can manually download the binary from the [releases page](https://github.com/filebrowser/filebrowser/releases).
+Build this local fork using the [contributor build instructions](../CONTRIBUTING.md#build). The upstream package-manager/download commands below install archived upstream releases and do not include this fork's changes. They are retained as historical reference.
 
 ### Brew
 
@@ -32,61 +32,33 @@ File Browser is now up and running. Read the ["First Boot"](#first-boot) section
 
 ## Docker
 
-File Browser is available as two different Docker images, which can be found on [Docker Hub](https://hub.docker.com/r/filebrowser/filebrowser): a [bare Alpine image](#bare-alpine-image) and an [S6 Overlay image](#s6-overlay-image).
+This fork has one Dockerfile, `Dockerfile.source`, which builds the application from this checkout. The default Compose setup runs only the application. Build the local binary for secret preparation as described in [contributing](../CONTRIBUTING.md#build), then run:
 
-### Bare Alpine Image
-
-```sh
-docker run \
-    -v filebrowser_data:/srv \
-    -v filebrowser_database:/database \
-    -v filebrowser_config:/config \
-    -p 8080:80 \
-    filebrowser/filebrowser
+```text
+node docker/local/prepare-secrets.mjs
+docker compose up -d --build --wait
 ```
 
-Where `filebrowser_data`, `filebrowser_database` and `filebrowser_config` are Docker [volumes](https://docs.docker.com/engine/storage/volumes/), where the data, database and configuration will be stored, respectively. The default configuration and database will be automatically initialized.
+The app listens on `127.0.0.1:8000` by default. Named volumes store served files, configuration and the database. Use a TLS reverse proxy for browser deployment; Secure cookies are enabled by default. See [deployment](deployment.md) for runtime limits, secrets and loopback development settings.
 
-The default user that runs File Browser inside the container has UID 1000 and GID 1000. If, for one reason or another, you want to run the Docker container with a different user, please consult Docker's [user documentation](https://docs.docker.com/engine/containers/run/#user).
+For optional Redis persistence of pending upload metadata:
 
-> [!NOTE]
->
-> When using [bind mounts](https://docs.docker.com/engine/storage/bind-mounts/), that is, when you mount a path on the host in the container, you must manually ensure that they have the correct **permissions**. Docker does not do this automatically for you. The host directories must be readable and writable by the user running inside the container. You can use the [`chown`](https://linux.die.net/man/1/chown) command to change the owner of those paths.
-
-File Browser is now up and running. Read the ["First Boot"](#first-boot) section for more information.
-
-### S6 Overlay Image
-
-The `s6` image is based on LinuxServer and leverages the [s6-overlay](https://github.com/just-containers/s6-overlay) system for a standard, highly customizable image. It should be used as follows:
-
-```shell
-docker run \
-    -v /path/to/srv:/srv \
-    -v /path/to/database:/database \
-    -v /path/to/config:/config \
-    -e PUID=$(id -u) \
-    -e PGID=$(id -g) \
-    -p 8080:80 \
-    filebrowser/filebrowser:s6
+```text
+node docker/local/prepare-secrets.mjs --redis
+docker compose -f compose.yaml -f compose.redis.yaml up -d --build --wait
 ```
 
-Where:
+The helper can add the Redis secret to an existing app-only secret directory without changing the admin credentials. Redis preserves pending upload state across brief backend restarts; the app-only memory cache requires unfinished uploads to restart. Completed files and login sessions persist in both setups. Redis does not provide replicated account/session storage.
 
-- `/path/to/srv` contains the files root directory for File Browser
-- `/path/to/config` contains a `settings.json` file
-- `/path/to/database` contains a `filebrowser.db` file
-
-Both `settings.json` and `filebrowser.db` will automatically be initialized if they don't exist.
-
-File Browser is now up and running. Read the ["First Boot"](#first-boot) section for more information.
+The former BusyBox and s6 Dockerfiles were removed. Upstream Docker Hub images do not contain this fork's changes. Use the source build and follow [deployment](deployment.md#optional-redis-upload-persistence) when switching cache backends or migrating an existing installation.
 
 ## First Boot
 
-Your instance is now up and running. File Browser will automatically bootstrap a database, in which the configuration and the users are stored. You can find the address in which your instance is running, as well as the randomly generated password for the user `admin`, in the console logs.
+File Browser bootstraps a database containing configuration and users. Standalone quick setup can print a randomly generated admin password in the console. The Compose setup uses the password generated by the secret-preparation helper before startup.
 
 > [!WARNING]
 >
-> The automatically generated password for the user `admin` is only displayed once. If you fail to remember it, you will need to manually delete the database and start File Browser again.
+> The automatically generated password for the user `admin` is displayed once. For Compose, the secret-preparation helper prints it before startup; the container receives only its hash. Save the password securely. If it is lost, an operator can reset it with the [users update command](cli/filebrowser-users-update.md) against the existing database during maintenance. Preserve the database and served files.
 
 Although this is the fastest way to bootstrap an instance, we recommend you to take a look at other possible options, by checking [`config init`](cli/filebrowser-config-init.md) and [`config set`](cli/filebrowser-config-set.md), to make the installation as safe and customized as it can be.
 

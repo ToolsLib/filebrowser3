@@ -12,6 +12,8 @@ Canceling an upload removes only its staging files. The user needs Create permis
 
 The memory cache supports one server process. Redis stores upload generations shared by multiple instances. Registration is atomic, state failures reach the caller, and completion/heartbeat operations compare generation IDs so delayed requests cannot affect replacements.
 
+The default Compose setup uses memory and starts only the application. To retain pending upload metadata across brief backend restarts, opt into `compose.redis.yaml`; setup and switching instructions are in [deployment](deployment.md#optional-redis-upload-persistence). Files and login sessions persist in both setups. Pending uploads do not migrate when switching cache backends.
+
 The supported application authentication topology is one process per Bolt database; see [sessions](sessions.md). Cross-process upload/cache tests verify the coordination component in isolation. A future deployment with a shared identity backend also needs the storage and lock guarantees described here.
 
 Concurrent chunks are serialized with an OS advisory lock beside their staging file, including requests handled by different processes. A process crash releases the OS lock. Multi-instance deployments must mount shared storage at the same absolute paths and use a filesystem whose advisory locking works across those instances. Redis alone does not make independent filesystems or storage without distributed advisory locks safe. Test the lock behavior of the intended storage before using multiple replicas.

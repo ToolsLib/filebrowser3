@@ -2,7 +2,7 @@
 
 ## Local-source Compose deployment
 
-`compose.yaml` builds this checkout using `Dockerfile.source`; it does not run an upstream `latest` image. Node, Go, Alpine and Redis base images are pinned by digest. Build the local Go binary first (`go run ./tools/build` after building frontend assets), then prepare new secrets:
+`Dockerfile.source` is the single Docker build definition. It builds the frontend and backend from this checkout and uses digest-pinned Node, Go and Alpine images. The default `compose.yaml` runs only the application, using the in-memory resumable-upload cache. Build the local Go binary first (`go run ./tools/build` after building frontend assets), then prepare the initial admin secret:
 
 ```text
 node docker/local/prepare-secrets.mjs
@@ -10,17 +10,49 @@ docker compose build
 docker compose up -d --wait
 ```
 
-The preparation command generates a random initial admin password and Redis secret, stores only the admin password hash, and prints the admin password once. Save it in your password manager. It refuses to overwrite an existing directory. Do not commit `secrets/`; it is ignored by Git and excluded from Docker build context. On Unix the directory is mode 0700; files are 0644 inside that private parent so file-based Compose secret mounts can be read by both non-root container users. Keep the parent private and do not move those files into a shared directory. On Windows restrict the directory's NTFS access to the operator account and administrators.
+The preparation command generates a random initial admin password, stores only its hash, and prints the password once. Save it in your password manager. The default setup creates no Redis secret and starts no Redis service. Existing secrets are never overwritten. Do not commit `secrets/`; it is ignored by Git and excluded from Docker build context. On Unix the directory is mode 0700; files are 0644 inside that private parent so file-based Compose secret mounts can be read by non-root container users. Keep the parent private and do not move those files into a shared directory. On Windows restrict the directory's NTFS access to the operator account and administrators.
 
 The app is published only at `127.0.0.1:8000` by default (`FB_HTTP_PORT` changes the port). Put a TLS reverse proxy in front of it and preserve the external Host header. Secure cookies are enabled by default, including behind the proxy. Direct loopback HTTP development can use a Compose override setting `FB_INSECURE_COOKIES=true`; keep it off for deployment. `FB_USERNAME` selects the initial account name (default `admin`). The initial password hash is used only when creating a new database; changing the secret file later does not reset an existing account.
 
-Both services run as unprivileged users, drop all capabilities, enable no-new-privileges, use read-only root filesystems, and have process/memory/CPU limits. Separate named volumes persist `/srv`, `/config`, `/database` and Redis AOF data. Back up served files, configuration and the database together; a database restore also restores the session/revocation state in that backup. `docker compose down` preserves volumes. `down --volumes` deletes them and is for disposable test stacks only.
+The app runs as an unprivileged user, drops all capabilities, enables no-new-privileges, uses a read-only root filesystem, and has process/memory/CPU limits. Named volumes persist `/srv`, `/config` and `/database`. Files and login sessions survive application restarts. Pending in-memory uploads lose their resume state after a restart and must be uploaded again; existing destination files remain protected by staging. Back up served files, configuration and the database together; a database restore also restores the session/revocation state in that backup. `docker compose down` preserves volumes. `down --volumes` deletes them and is for disposable test stacks only.
 
-Redis has no host port and sits on a private internal network. Its default user is disabled; the application user can access only `filebrowser:upload:v2:*` with the commands needed by the cache. Administrative commands and other keyspaces are denied. Redis uses AOF persistence and a no-eviction memory limit; exhausted cache capacity fails uploads closed rather than discarding active state. The application also has a web network for the loopback published port and optional outbound integrations such as reCAPTCHA.
+### Optional Redis upload persistence
+
+Use `compose.redis.yaml` together with the default file when pending uploads should survive brief backend restarts. Redis stores upload metadata; files stay on disk and accounts/sessions stay in Bolt. State expires after three minutes without activity, so restart recovery must happen within that window.
+
+For a fresh Redis-enabled setup:
+
+```text
+node docker/local/prepare-secrets.mjs --redis
+docker compose -f compose.yaml -f compose.redis.yaml up -d --build --wait
+```
+
+For an existing app-only setup, the same secret command adds only the missing Redis secret and preserves the admin hash/password. Then start the combined Compose configuration. Keep the same project name/directory to reuse the app's existing volumes. New uploads use Redis; pending uploads created with the memory cache must restart. The override mounts the Redis secret, selects it through `FB_REDIS_PASSWORD_FILE`, and waits for Redis health before starting the app. If Redis is explicitly selected but its secret is missing or invalid, startup fails rather than silently switching caches.
+
+Redis has no host port and sits on a private internal network. Its default user is disabled; the application user can access only `filebrowser:upload:v2:*` with the commands needed by the cache. Administrative commands and other keyspaces are denied. It has the same non-root/read-only/capability restrictions as the app, plus its own resource limits. Redis uses a separate AOF volume and a no-eviction memory limit; exhausted cache capacity fails uploads closed rather than discarding active state. The application retains its web network for the loopback published port and optional outbound integrations such as reCAPTCHA.
+
+Use both `-f` arguments for subsequent Redis-enabled `up`, `stop`, `logs` and `down` commands. To return to app-only mode, stop the combined stack without deleting volumes, then start the base file:
+
+```text
+docker compose -f compose.yaml -f compose.redis.yaml down
+docker compose up -d --wait
+```
+
+Completed files, settings and sessions remain in the same app volumes. Pending Redis uploads do not migrate into memory. The Redis data volume and secret can be kept for later use; the default app does not mount or use them. An external Redis server can instead be selected with the app's existing `FB_REDIS_CACHE_URL` setting in a custom override; `FB_REDIS_PASSWORD_FILE` is the convenience option for the bundled Redis service.
 
 The supported authentication topology is one server process per Bolt database. Redis coordinates upload state; it does not share accounts or sessions across independent database copies. See [sessions](sessions.md), [upload recovery](uploads.md), and [request limits](request-limits.md). Keep the command runner and external-symlink option disabled. Only operator-controlled server/user root directories and ancestors belong in the filesystem trust boundary.
 
-Validation of the supplied stack covers source build, health, UID/capability/root-filesystem settings, denied Redis administration/foreign keys, authenticated TUS upload, and session/partial-upload persistence across service restart. Existing upstream Dockerfiles are retained as legacy packaging references; the current local-source Compose path uses `Dockerfile.source`.
+### Testing the Docker setups
+
+After building the host binary, run:
+
+```text
+node docker/local/smoke-test.mjs
+```
+
+This builds `Dockerfile.source` once and exercises isolated app-only and Redis stacks. It checks resolved services/secrets, health, runtime isolation, authentication, direct/TUS uploads and durable files/sessions after restart. It verifies that memory-backed uploads require a safe restart, while Redis-backed uploads resume at the prior offset, and checks Redis ACL denials. It also tests initial secret generation, adding Redis without changing the admin hash, and overwrite protection. Disposable containers, volumes, image tags and test secrets are removed. Build output is saved in ignored `build/compose-smoke-build.log`.
+
+CI runs the same Docker checks on Linux, and release depends on them. The legacy `Dockerfile` and `Dockerfile.s6` were removed; build commands must use `-f Dockerfile.source` or the supplied Compose configuration.
 
 ## Self-Registration (Signup)
 

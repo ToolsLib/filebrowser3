@@ -1,0 +1,48 @@
+# Optional upload-state persistence: use together with compose.yaml.
+services:
+  filebrowser:
+    environment:
+      FB_REDIS_PASSWORD_FILE: /run/secrets/redis_password
+    secrets:
+      - redis_password
+    networks:
+      filebrowser:
+    depends_on:
+      redis:
+        condition: service_healthy
+  redis:
+    image: redis:8.6.8-alpine3.23@sha256:91c71f9ea78fa3fe268ff832a985c48e592244f707993773f8b3e1b244ac1137
+    user: "999:999"
+    init: true
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 0.5
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    entrypoint: [sh, /usr/local/bin/filebrowser-redis-entrypoint]
+    volumes:
+      - redis-data:/data
+      - ./docker/local/redis-entrypoint.sh:/usr/local/bin/filebrowser-redis-entrypoint:ro
+    secrets: [redis_password]
+    networks: [filebrowser]
+    healthcheck:
+      test:
+        [
+          CMD-SHELL,
+          'REDISCLI_AUTH="$$(cat /run/secrets/redis_password)" redis-cli --user filebrowser ping | grep -qx PONG',
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+networks:
+  filebrowser:
+    internal: true
+volumes:
+  redis-data:
+secrets:
+  redis_password:
+    file: ./secrets/redis_password

@@ -89,7 +89,7 @@ task docs:cli:generate
 
 ## Release
 
-No release tags or remote are created by normal builds. After an operator configures the intended remote and explicitly creates a version tag, the GitHub Actions release job waits for frontend/browser tests, backend lint, Windows/Linux tests, Redis integration, vulnerability scans and a local build. It publishes binary archives and checksums to that repository using a job-scoped contents-write token. Inherited upstream Docker Hub and Homebrew publishing targets were removed. Container builds remain local through `Dockerfile.source` and Compose.
+No release tags or remote are created by normal builds. After an operator configures the intended remote and explicitly creates a version tag, the GitHub Actions release job waits for frontend/browser tests, backend lint, Windows/Linux tests, Redis integration, both Compose deployment tests, vulnerability scans and a local build. It publishes binary archives and checksums to that repository using a job-scoped contents-write token. Inherited upstream Docker Hub and Homebrew publishing targets were removed. `Dockerfile.source` is the only Dockerfile; Compose defaults to app-only, with Redis enabled by the explicit `compose.redis.yaml` override. See [deployment](docs/deployment.md) for commands and `node docker/local/smoke-test.mjs` for both runtime checks.
 
 GoReleaser is pinned to v2.20.2. Its full `check`/release validation requires a configured SCM remote. In the intentionally remote-free local repository, its configuration is checked against that version's JSON schema; live release publishing remains unexercised. A remote should be configured only when the operator is ready to publish.
 

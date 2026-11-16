@@ -2,6 +2,8 @@
 
 Completed: 16 November 2026, Europe/Paris.
 
+Docker follow-up: the current setup now retains only `Dockerfile.source`, defaults to app-only Compose, and enables Redis through `compose.redis.yaml`. Both setups have automated runtime tests. See the [current deployment instructions](../deployment.md); the report below records the original remediation snapshot.
+
 All **28 findings** in the [original review](2026-11-16-project-review.md) are resolved, with implementation, compatibility decisions and validation recorded in [fix status](fix-status.md). The work is committed on `fix/project-review`. The original import remains available on `main` at `d810b7c`. No remote, release tag or public deployment was created.
 
 ## Results compared with the baseline
