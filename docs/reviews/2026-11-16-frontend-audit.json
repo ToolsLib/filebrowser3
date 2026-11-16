@@ -1,0 +1,1155 @@
+{
+  "date": "2026-11-16",
+  "baseline_commit": "d810b7c",
+  "package_manager": "pnpm 10.33.4",
+  "lockfile_sha256": "21aab68a4f5fabc2ff49c972290799791d51ab40103a533c4ab0b0504346ce97",
+  "full_audit": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 9,
+      "moderate": 22,
+      "high": 48,
+      "critical": 1
+    },
+    "dependencies": 620,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 620
+  },
+  "production_audit": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 5,
+      "moderate": 8,
+      "high": 34,
+      "critical": 1
+    },
+    "dependencies": 188,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 188
+  },
+  "note": "Registry alerts require applicability review. Counts may include multiple affected versions or dependency paths; they are not counts of verified application exploits.",
+  "advisories": [
+    {
+      "package": "rollup",
+      "advisory": "GHSA-mw96-cpmx-2vgc",
+      "severity": "high",
+      "title": "Rollup 4 has Arbitrary File Write via Path Traversal",
+      "vulnerable_versions": ">=4.0.0 <4.59.0",
+      "patched_versions": ">=4.59.0",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "4.57.1",
+          "paths": [".>@intlify/unplugin-vue-i18n>@rollup/pluginutils>rollup"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-mw96-cpmx-2vgc"
+    },
+    {
+      "package": "lodash",
+      "advisory": "GHSA-r5fr-rjxr-66jc",
+      "severity": "high",
+      "title": "lodash vulnerable to Code Injection via `_.template` imports key names",
+      "vulnerable_versions": ">=4.0.0 <=4.17.23",
+      "patched_versions": ">=4.18.0",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "4.17.23",
+          "paths": [".>epubjs>lodash"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-r5fr-rjxr-66jc"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-wh4c-j3r5-mjhp",
+      "severity": "high",
+      "title": "xmldom: XML injection via unsafe CDATA serialization allows attacker-controlled markup insertion",
+      "vulnerable_versions": "<0.8.12",
+      "patched_versions": ">=0.8.12",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-wh4c-j3r5-mjhp"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-2v35-w6hq-6mfw",
+      "severity": "high",
+      "title": "xmldom: Uncontrolled recursion in XML serialization leads to DoS",
+      "vulnerable_versions": "<0.8.13",
+      "patched_versions": ">=0.8.13",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-2v35-w6hq-6mfw"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-f6ww-3ggp-fr8h",
+      "severity": "high",
+      "title": "xmldom has XML injection through unvalidated DocumentType serialization",
+      "vulnerable_versions": "<0.8.13",
+      "patched_versions": ">=0.8.13",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-f6ww-3ggp-fr8h"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-x6wf-f3px-wcqx",
+      "severity": "high",
+      "title": "xmldom has XML node injection through unvalidated processing instruction serialization",
+      "vulnerable_versions": "<0.8.13",
+      "patched_versions": ">=0.8.13",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-x6wf-f3px-wcqx"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-j759-j44w-7fr8",
+      "severity": "high",
+      "title": "xmldom has XML node injection through unvalidated comment serialization",
+      "vulnerable_versions": "<0.8.13",
+      "patched_versions": ">=0.8.13",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-j759-j44w-7fr8"
+    },
+    {
+      "package": "esbuild",
+      "advisory": "GHSA-g7r4-m6w7-qqqr",
+      "severity": "low",
+      "title": "esbuild allows arbitrary file read when running the development server on Windows",
+      "vulnerable_versions": ">=0.27.3 <0.28.1",
+      "patched_versions": ">=0.28.1",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "0.27.3",
+          "paths": [".>vite>esbuild"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-g7r4-m6w7-qqqr"
+    },
+    {
+      "package": "vite",
+      "advisory": "GHSA-v6wh-96g9-6wx3",
+      "severity": "moderate",
+      "title": "launch-editor: NTLMv2 hash disclosure via UNC path handling on Windows",
+      "vulnerable_versions": ">=8.0.0 <=8.0.15",
+      "patched_versions": ">=8.0.16",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "8.0.13",
+          "paths": [".>vite"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-v6wh-96g9-6wx3"
+    },
+    {
+      "package": "@babel/core",
+      "advisory": "GHSA-4x5r-pxfx-6jf8",
+      "severity": "low",
+      "title": "@babel/core: Arbitrary File Read via sourceMappingURL Comment",
+      "vulnerable_versions": "<=7.29.0",
+      "patched_versions": ">=7.29.6",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "7.29.0",
+          "paths": [".>@vitejs/plugin-legacy>@babel/core"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-4x5r-pxfx-6jf8"
+    },
+    {
+      "package": "brace-expansion",
+      "advisory": "GHSA-3jxr-9vmj-r5cp",
+      "severity": "high",
+      "title": "brace-expansion: DoS via exponential-time expansion of consecutive non-expanding {} groups",
+      "vulnerable_versions": ">=2.0.0 <2.1.2",
+      "patched_versions": ">=2.1.2",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "2.1.0",
+          "paths": [
+            ".>@typescript-eslint/eslint-plugin>@typescript-eslint/parser>@typescript-eslint/typescript-estree>minimatch>brace-expansion"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-3jxr-9vmj-r5cp"
+    },
+    {
+      "package": "brace-expansion",
+      "advisory": "GHSA-3jxr-9vmj-r5cp",
+      "severity": "high",
+      "title": "brace-expansion: DoS via exponential-time expansion of consecutive non-expanding {} groups",
+      "vulnerable_versions": ">=3.0.0 <5.0.7",
+      "patched_versions": ">=5.0.7",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "5.0.6",
+          "paths": [
+            ".>@intlify/unplugin-vue-i18n>@typescript-eslint/typescript-estree>minimatch>brace-expansion"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-3jxr-9vmj-r5cp"
+    },
+    {
+      "package": "brace-expansion",
+      "advisory": "GHSA-mh99-v99m-4gvg",
+      "severity": "high",
+      "title": "brace-expansion: DoS via unbounded expansion length causing an out-of-memory process crash",
+      "vulnerable_versions": ">=2.0.0 <2.1.3",
+      "patched_versions": ">=2.1.3",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "2.1.0",
+          "paths": [
+            ".>@typescript-eslint/eslint-plugin>@typescript-eslint/parser>@typescript-eslint/typescript-estree>minimatch>brace-expansion"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-mh99-v99m-4gvg"
+    },
+    {
+      "package": "brace-expansion",
+      "advisory": "GHSA-mh99-v99m-4gvg",
+      "severity": "high",
+      "title": "brace-expansion: DoS via unbounded expansion length causing an out-of-memory process crash",
+      "vulnerable_versions": ">=4.0.0 <5.0.8",
+      "patched_versions": ">=5.0.8",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "5.0.6",
+          "paths": [
+            ".>@intlify/unplugin-vue-i18n>@typescript-eslint/typescript-estree>minimatch>brace-expansion"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-mh99-v99m-4gvg"
+    },
+    {
+      "package": "postcss",
+      "advisory": "GHSA-fxqj-rqcc-2cmp",
+      "severity": "moderate",
+      "title": "PostCSS: incomplete fix of GHSA-6g55-p6wh-862q — attacker-controlled sourceMappingURL reads arbitrary .map files when `from` is unset",
+      "vulnerable_versions": "<=8.5.22",
+      "patched_versions": ">=8.5.23",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "8.5.18",
+          "paths": [".>postcss"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-fxqj-rqcc-2cmp"
+    },
+    {
+      "package": "brace-expansion",
+      "advisory": "GHSA-rgw5-rvv9-x895",
+      "severity": "high",
+      "title": "brace-expansion: DoS via unbounded intermediate arrays, bypassing the CVE-2026-14257 mitigation",
+      "vulnerable_versions": ">=4.0.0 <5.0.9",
+      "patched_versions": ">=5.0.9",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "5.0.6",
+          "paths": [
+            ".>@intlify/unplugin-vue-i18n>@typescript-eslint/typescript-estree>minimatch>brace-expansion"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-rgw5-rvv9-x895"
+    },
+    {
+      "package": "brace-expansion",
+      "advisory": "GHSA-rgw5-rvv9-x895",
+      "severity": "high",
+      "title": "brace-expansion: DoS via unbounded intermediate arrays, bypassing the CVE-2026-14257 mitigation",
+      "vulnerable_versions": ">=2.0.0 <2.1.4",
+      "patched_versions": ">=2.1.4",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "2.1.0",
+          "paths": [
+            ".>@typescript-eslint/eslint-plugin>@typescript-eslint/parser>@typescript-eslint/typescript-estree>minimatch>brace-expansion"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-rgw5-rvv9-x895"
+    },
+    {
+      "package": "dompurify",
+      "advisory": "GHSA-55q2-fjhq-7xh7",
+      "severity": "moderate",
+      "title": "DOMPurify: IN_PLACE hook removal leaves a detached subtree executable, causing XSS",
+      "vulnerable_versions": "<=3.4.12",
+      "patched_versions": ">=3.4.13",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "3.4.12",
+          "paths": [".>dompurify"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-55q2-fjhq-7xh7"
+    },
+    {
+      "package": "nanoid",
+      "advisory": "GHSA-2v37-7h3g-55p8",
+      "severity": "high",
+      "title": "nanoid: custom generators can loop indefinitely when size is zero",
+      "vulnerable_versions": "<3.3.18",
+      "patched_versions": ">=3.3.18",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "3.3.16",
+          "paths": [".>postcss>nanoid"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-2v37-7h3g-55p8"
+    },
+    {
+      "package": "postcss-selector-parser",
+      "advisory": "GHSA-w9m9-85wc-3x92",
+      "severity": "low",
+      "title": "postcss-selector-parser allows denial of service through uncontrolled AST recursion",
+      "vulnerable_versions": ">=7.1.0 <7.1.3",
+      "patched_versions": ">=7.1.3",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "7.1.1",
+          "paths": [".>eslint-plugin-vue>postcss-selector-parser"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-w9m9-85wc-3x92"
+    },
+    {
+      "package": "browserslist",
+      "advisory": "GHSA-c83g-rgw3-j3cx",
+      "severity": "high",
+      "title": "Browserslist: Unbounded memory growth (no cache eviction) via distinct query results, leading to eventual OOM",
+      "vulnerable_versions": "<=4.28.6",
+      "patched_versions": ">=4.28.7",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "4.28.2",
+          "paths": [".>@vitejs/plugin-legacy>browserslist"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-c83g-rgw3-j3cx"
+    },
+    {
+      "package": "browserslist",
+      "advisory": "GHSA-73wf-gq98-2v4g",
+      "severity": "high",
+      "title": "Browserslist: Uncaught crash / prototype write via untrusted browserslist-stats.json custom stats (normalizeStats)",
+      "vulnerable_versions": "<=4.28.6",
+      "patched_versions": ">=4.28.7",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "4.28.2",
+          "paths": [".>@vitejs/plugin-legacy>browserslist"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-73wf-gq98-2v4g"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-6gmq-8vp8-gcm6",
+      "severity": "moderate",
+      "title": "xmldom: XML fragment injection via invalid EntityReference.nodeName during requireWellFormed serialization",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-6gmq-8vp8-gcm6"
+    },
+    {
+      "package": "csv-parse",
+      "advisory": "GHSA-8cw4-87c7-c6xx",
+      "severity": "moderate",
+      "title": "node-csv: Prototype replacement still reachable via columns path",
+      "vulnerable_versions": "<7.0.2",
+      "patched_versions": ">=7.0.2",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "6.2.1",
+          "paths": [".>csv-parse"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-8cw4-87c7-c6xx"
+    },
+    {
+      "package": "vitest",
+      "advisory": "GHSA-82fw-gwwq-j7x9",
+      "severity": "moderate",
+      "title": "Vitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock",
+      "vulnerable_versions": ">=2.1.0 <4.1.11",
+      "patched_versions": ">=4.1.11",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "4.1.6",
+          "paths": [".>vitest"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-82fw-gwwq-j7x9"
+    },
+    {
+      "package": "@vitest/mocker",
+      "advisory": "GHSA-82fw-gwwq-j7x9",
+      "severity": "moderate",
+      "title": "Vitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock",
+      "vulnerable_versions": ">=2.1.0 <4.1.11",
+      "patched_versions": ">=4.1.11",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "4.1.6",
+          "paths": [".>vitest>@vitest/mocker"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-82fw-gwwq-j7x9"
+    },
+    {
+      "package": "baseline-browser-mapping",
+      "advisory": "GHSA-w5vr-8v7q-w6rv",
+      "severity": "moderate",
+      "title": "baseline-browser-mapping process termination on invalid input causes denial of service",
+      "vulnerable_versions": ">=2.0.0 <2.11.0",
+      "patched_versions": ">=2.11.0",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "2.10.19",
+          "paths": [
+            ".>@vitejs/plugin-legacy>browserslist>baseline-browser-mapping"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-w5vr-8v7q-w6rv"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-w2rr-34g9-rvrj",
+      "severity": "high",
+      "title": "xmldom: Element name injection via createElement() bypasses requireWellFormed",
+      "vulnerable_versions": ">=0.7.0 <=0.8.13",
+      "patched_versions": ">=0.8.14",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-w2rr-34g9-rvrj"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-4w3w-2rp5-g8jm",
+      "severity": "high",
+      "title": "xmldom: Attribute name injection via setAttribute() bypasses requireWellFormed",
+      "vulnerable_versions": ">=0.7.0 <=0.8.13",
+      "patched_versions": ">=0.8.14",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-4w3w-2rp5-g8jm"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-c7q8-3ch8-vqpv",
+      "severity": "high",
+      "title": "xmldom: Processing Instruction Target Injection Bypasses requireWellFormed",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-c7q8-3ch8-vqpv"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-27p8-2357-5qqv",
+      "severity": "high",
+      "title": "xmldom: DocType `name` Injection Bypasses requireWellFormed",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-27p8-2357-5qqv"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-6h8r-xr42-gp59",
+      "severity": "moderate",
+      "title": "xmldom: Parser silently accepts a not-well-formed end tag whose name is followed by a line break and trailing content",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-6h8r-xr42-gp59"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-8344-3jmq-59r6",
+      "severity": "high",
+      "title": "xmldom: Quadratic-time attribute deduplication",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-8344-3jmq-59r6"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-x4fp-j954-r2f4",
+      "severity": "high",
+      "title": "xmldom: End-tag Whitespace-Trim Regex ReDoS — quadratic backtracking in the 0.8.x end-tag parser",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-x4fp-j954-r2f4"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-965w-775f-mr7g",
+      "severity": "high",
+      "title": "xmldom: Quadratic-memory consumption",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-965w-775f-mr7g"
+    },
+    {
+      "package": "@xmldom/xmldom",
+      "advisory": "GHSA-93r5-fhx6-vmg9",
+      "severity": "high",
+      "title": "xmldom: Quadratic-time parsing via the malformed-input recovery path — `parseElementStartPart` re-scan and `normalize()` adjacent-text merge",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [".>epubjs>@xmldom/xmldom"]
+        },
+        {
+          "version": "0.8.11",
+          "paths": [".>video.js>mpd-parser>@xmldom/xmldom"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-93r5-fhx6-vmg9"
+    },
+    {
+      "package": "brace-expansion",
+      "advisory": "GHSA-q2hr-2g5m-vwhr",
+      "severity": "moderate",
+      "title": "brace-expansion: Quadratic-time expansion of the `{a},b}` rewrite causes CPU denial of service",
+      "vulnerable_versions": ">=2.0.0 <2.1.7",
+      "patched_versions": ">=2.1.7",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "2.1.0",
+          "paths": [
+            ".>@typescript-eslint/eslint-plugin>@typescript-eslint/parser>@typescript-eslint/typescript-estree>minimatch>brace-expansion"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr"
+    },
+    {
+      "package": "brace-expansion",
+      "advisory": "GHSA-q2hr-2g5m-vwhr",
+      "severity": "moderate",
+      "title": "brace-expansion: Quadratic-time expansion of the `{a},b}` rewrite causes CPU denial of service",
+      "vulnerable_versions": ">=4.0.0 <5.0.12",
+      "patched_versions": ">=5.0.12",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "5.0.6",
+          "paths": [
+            ".>@intlify/unplugin-vue-i18n>@typescript-eslint/typescript-estree>minimatch>brace-expansion"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr"
+    },
+    {
+      "package": "brace-expansion",
+      "advisory": "GHSA-qhr7-859c-m2p7",
+      "severity": "high",
+      "title": "brace-expansion: DoS via uncontrolled recursion on nested brace groups causing stack exhaustion",
+      "vulnerable_versions": ">=2.0.0 <2.1.6",
+      "patched_versions": ">=2.1.6",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "2.1.0",
+          "paths": [
+            ".>@typescript-eslint/eslint-plugin>@typescript-eslint/parser>@typescript-eslint/typescript-estree>minimatch>brace-expansion"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-qhr7-859c-m2p7"
+    },
+    {
+      "package": "brace-expansion",
+      "advisory": "GHSA-qhr7-859c-m2p7",
+      "severity": "high",
+      "title": "brace-expansion: DoS via uncontrolled recursion on nested brace groups causing stack exhaustion",
+      "vulnerable_versions": ">=4.0.0 <5.0.11",
+      "patched_versions": ">=5.0.11",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "5.0.6",
+          "paths": [
+            ".>@intlify/unplugin-vue-i18n>@typescript-eslint/typescript-estree>minimatch>brace-expansion"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-qhr7-859c-m2p7"
+    },
+    {
+      "package": "brace-expansion",
+      "advisory": "GHSA-6j4f-fj2g-mc7p",
+      "severity": "high",
+      "title": "brace-expansion: DoS via uncontrolled recursion in parseCommaParts causing stack exhaustion",
+      "vulnerable_versions": ">=2.0.0 <2.1.5",
+      "patched_versions": ">=2.1.5",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "2.1.0",
+          "paths": [
+            ".>@typescript-eslint/eslint-plugin>@typescript-eslint/parser>@typescript-eslint/typescript-estree>minimatch>brace-expansion"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p"
+    },
+    {
+      "package": "brace-expansion",
+      "advisory": "GHSA-6j4f-fj2g-mc7p",
+      "severity": "high",
+      "title": "brace-expansion: DoS via uncontrolled recursion in parseCommaParts causing stack exhaustion",
+      "vulnerable_versions": ">=4.0.0 <5.0.10",
+      "patched_versions": ">=5.0.10",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "5.0.6",
+          "paths": [
+            ".>@intlify/unplugin-vue-i18n>@typescript-eslint/typescript-estree>minimatch>brace-expansion"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p"
+    },
+    {
+      "package": "dompurify",
+      "advisory": "GHSA-6688-9rhm-gjv2",
+      "severity": "low",
+      "title": "DOMPurify: IN_PLACE returns a force-removed rawtext root whose text carries attacker markup — pure HTML reparse executes",
+      "vulnerable_versions": "<=3.4.15",
+      "patched_versions": ">=3.4.16",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "3.4.12",
+          "paths": [".>dompurify"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-6688-9rhm-gjv2"
+    },
+    {
+      "package": "katex",
+      "advisory": "GHSA-238p-pmpm-9mq7",
+      "severity": "low",
+      "title": "KaTeX: Existing prototype pollution can bypass trust restrictions",
+      "vulnerable_versions": ">=0.11.0 <0.18.2",
+      "patched_versions": ">=0.18.2",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "0.16.28",
+          "paths": [".>marked-katex-extension>katex"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-238p-pmpm-9mq7"
+    },
+    {
+      "package": "source-map-js",
+      "advisory": "GHSA-68fv-2mgg-jv7q",
+      "severity": "high",
+      "title": "source-map-js allows event-loop denial of service through indexed source-map section offsets",
+      "vulnerable_versions": ">=1.0.0 <1.2.2",
+      "patched_versions": ">=1.2.2",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "1.2.1",
+          "paths": [
+            ".>@intlify/unplugin-vue-i18n>@intlify/bundle-utils>source-map-js"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-68fv-2mgg-jv7q"
+    },
+    {
+      "package": "@vue/server-renderer",
+      "advisory": "GHSA-g2v6-rqmx-r4w6",
+      "severity": "high",
+      "title": "@vue/server-renderer: XSS via missing CR in attribute-name blacklist",
+      "vulnerable_versions": "<3.5.42",
+      "patched_versions": ">=3.5.42",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "3.5.34",
+          "paths": [".>vue>@vue/server-renderer"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-g2v6-rqmx-r4w6"
+    },
+    {
+      "package": "vite",
+      "advisory": "GHSA-698v-4r3x-3vcv",
+      "severity": "moderate",
+      "title": "launch-editor: escapeCmdArgs() omits % escaping on Windows",
+      "vulnerable_versions": ">=8.0.0 <=8.1.5",
+      "patched_versions": ">=8.1.6",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "8.0.13",
+          "paths": [".>vite"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-698v-4r3x-3vcv"
+    },
+    {
+      "package": "vite",
+      "advisory": "GHSA-r825-w8mm-5pxw",
+      "severity": "moderate",
+      "title": "launch-editor: Editor CLI flag misinterpretation causing arbitrary command execution for some editors",
+      "vulnerable_versions": ">=8.0.0 <=8.1.5",
+      "patched_versions": ">=8.1.6",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "8.0.13",
+          "paths": [".>vite"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-r825-w8mm-5pxw"
+    },
+    {
+      "package": "vite",
+      "advisory": "GHSA-587h-7wmj-h5pm",
+      "severity": "high",
+      "title": "launch-editor: `fs.existsSync()` existence check can be bypassed on Windows",
+      "vulnerable_versions": ">=8.0.0 <=8.1.5",
+      "patched_versions": ">=8.1.6",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "8.0.13",
+          "paths": [".>vite"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-587h-7wmj-h5pm"
+    },
+    {
+      "package": "vite",
+      "advisory": "GHSA-9jrq-w75r-8gcw",
+      "severity": "low",
+      "title": "Vite: Cross origin script execution through Vite custom middleware",
+      "vulnerable_versions": ">=8.0.0 <=8.1.5",
+      "patched_versions": ">=8.1.6",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "8.0.13",
+          "paths": [".>vite"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-9jrq-w75r-8gcw"
+    },
+    {
+      "package": "vite",
+      "advisory": "GHSA-rq7h-c2jc-7f22",
+      "severity": "moderate",
+      "title": "Vite: Files outside `server.fs.allow` could be served when project paths match system paths on non-Windows machine",
+      "vulnerable_versions": ">=8.0.0 <=8.1.5",
+      "patched_versions": ">=8.1.6",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "8.0.13",
+          "paths": [".>vite"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-rq7h-c2jc-7f22"
+    },
+    {
+      "package": "@vitest/mocker",
+      "advisory": "GHSA-qxg6-89mg-rqv8",
+      "severity": "moderate",
+      "title": "Vitest: Code injection via unauthenticated manual mock registration",
+      "vulnerable_versions": ">=2.1.0-beta.7 <4.1.12",
+      "patched_versions": ">=4.1.12",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "4.1.6",
+          "paths": [".>vitest>@vitest/mocker"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-qxg6-89mg-rqv8"
+    },
+    {
+      "package": "dompurify",
+      "advisory": "GHSA-cg2g-xh64-v4q7",
+      "severity": "critical",
+      "title": "DOMPurify SAFE_FOR_TEMPLATES bypass: split template expressions survive in attached shadow root content on DOM output modes",
+      "vulnerable_versions": ">=3.4.4 <=3.4.16",
+      "patched_versions": ">=3.4.17",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "3.4.12",
+          "paths": [".>dompurify"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-cg2g-xh64-v4q7"
+    },
+    {
+      "package": "dompurify",
+      "advisory": "GHSA-mrv2-3pqr-j5jr",
+      "severity": "high",
+      "title": "DOMPurify IN_PLACE: hook that removes a parent or sibling leaves the detached subtree's event handlers armed (incomplete fix for GHSA-p98j-92pf-mc4p)",
+      "vulnerable_versions": "<=3.4.16",
+      "patched_versions": ">=3.4.17",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "3.4.12",
+          "paths": [".>dompurify"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-mrv2-3pqr-j5jr"
+    },
+    {
+      "package": "dompurify",
+      "advisory": "GHSA-c6gr-qvv4-5v3f",
+      "severity": "low",
+      "title": "DOMPurify: SMIL attributeName=href guard is skipped when PARSER_MEDIA_TYPE is application/xhtml+xml",
+      "vulnerable_versions": "<=3.4.16",
+      "patched_versions": ">=3.4.17",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "3.4.12",
+          "paths": [".>dompurify"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-c6gr-qvv4-5v3f"
+    },
+    {
+      "package": "postcss-selector-parser",
+      "advisory": "GHSA-rj75-hqrm-r3gf",
+      "severity": "moderate",
+      "title": "PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion",
+      "vulnerable_versions": ">=7.0.0 <7.1.6",
+      "patched_versions": ">=7.1.6",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "7.1.1",
+          "paths": [".>eslint-plugin-vue>postcss-selector-parser"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-rj75-hqrm-r3gf"
+    },
+    {
+      "package": "vite",
+      "advisory": "GHSA-fx2h-pf6j-xcff",
+      "severity": "moderate",
+      "title": "vite: `server.fs.deny` bypass on Windows alternate paths",
+      "vulnerable_versions": ">=8.0.0 <=8.0.15",
+      "patched_versions": ">=8.0.16",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "8.0.13",
+          "paths": [".>vite"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-fx2h-pf6j-xcff"
+    },
+    {
+      "package": "@intlify/core-base",
+      "advisory": "GHSA-8rc2-428q-7ww3",
+      "severity": "low",
+      "title": "Vue I18n: `escapeParameter` does not escape named values when the same call also passes a list",
+      "vulnerable_versions": ">=9.0.0-beta.12 <11.4.14",
+      "patched_versions": ">=11.4.14",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "11.4.2",
+          "paths": [".>vue-i18n>@intlify/core-base"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-8rc2-428q-7ww3"
+    },
+    {
+      "package": "vue-i18n",
+      "advisory": "GHSA-8rc2-428q-7ww3",
+      "severity": "low",
+      "title": "Vue I18n: `escapeParameter` does not escape named values when the same call also passes a list",
+      "vulnerable_versions": ">=9.0.0-beta.5 <11.4.14",
+      "patched_versions": ">=11.4.14",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "11.4.2",
+          "paths": [".>vue-i18n"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-8rc2-428q-7ww3"
+    },
+    {
+      "package": "@intlify/shared",
+      "advisory": "GHSA-83rm-6c8r-g728",
+      "severity": "high",
+      "title": "Vue I18n: escapeParameter does not prevent XSS through srcdoc in translation messages",
+      "vulnerable_versions": ">=11.1.10 <11.4.14",
+      "patched_versions": ">=11.4.14",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "11.4.2",
+          "paths": [".>@intlify/unplugin-vue-i18n>@intlify/shared"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-83rm-6c8r-g728"
+    },
+    {
+      "package": "@intlify/core-base",
+      "advisory": "GHSA-83rm-6c8r-g728",
+      "severity": "high",
+      "title": "Vue I18n: escapeParameter does not prevent XSS through srcdoc in translation messages",
+      "vulnerable_versions": ">=11.1.10 <11.4.14",
+      "patched_versions": ">=11.4.14",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "11.4.2",
+          "paths": [".>vue-i18n>@intlify/core-base"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-83rm-6c8r-g728"
+    },
+    {
+      "package": "vue-i18n",
+      "advisory": "GHSA-83rm-6c8r-g728",
+      "severity": "high",
+      "title": "Vue I18n: escapeParameter does not prevent XSS through srcdoc in translation messages",
+      "vulnerable_versions": ">=11.1.10 <11.4.14",
+      "patched_versions": ">=11.4.14",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "11.4.2",
+          "paths": [".>vue-i18n"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-83rm-6c8r-g728"
+    },
+    {
+      "package": "lodash",
+      "advisory": "GHSA-f23m-r3pf-42rh",
+      "severity": "moderate",
+      "title": "lodash vulnerable to prototype pollution via array-path bypass in `_.unset`, `_.omit`, and `_.pullAt",
+      "vulnerable_versions": "=4.17.23",
+      "patched_versions": ">=4.18.1",
+      "production_audit": true,
+      "findings": [
+        {
+          "version": "4.17.23",
+          "paths": [".>epubjs>lodash"]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-f23m-r3pf-42rh"
+    },
+    {
+      "package": "minimatch",
+      "advisory": "GHSA-g3hv-75wg-m249",
+      "severity": "moderate",
+      "title": "minimatch has potential denial of service via globparts amplification",
+      "vulnerable_versions": ">=7.0.0 <11.0.1",
+      "patched_versions": ">=11.0.1",
+      "production_audit": false,
+      "findings": [
+        {
+          "version": "10.2.5",
+          "paths": [
+            ".>@intlify/unplugin-vue-i18n>@typescript-eslint/typescript-estree>minimatch"
+          ]
+        },
+        {
+          "version": "9.0.9",
+          "paths": [
+            ".>@typescript-eslint/eslint-plugin>@typescript-eslint/parser>@typescript-eslint/typescript-estree>minimatch"
+          ]
+        }
+      ],
+      "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249"
+    }
+  ]
+}

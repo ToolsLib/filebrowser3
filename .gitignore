@@ -11,6 +11,10 @@ rice-box.go
 .DS_Store
 node_modules
 
+# Generated frontend verification output
+/frontend/test-results/
+/frontend/coverage/
+
 # local env files
 .env.local
 .env.*.local
