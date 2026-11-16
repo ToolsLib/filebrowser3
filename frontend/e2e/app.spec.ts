@@ -65,6 +65,27 @@ test("production login, local Ace, save and lazy previews work under CSP", async
     headers: { "X-Auth": accessToken },
   });
   expect(await uploadedFile.text()).toBe("Browser TUS upload");
+  const createdShare = await page.request.post("api/share/browser-upload.txt", {
+    headers: { "X-Auth": accessToken },
+    data: {},
+  });
+  expect(createdShare.ok()).toBe(true);
+  const publicShare = await createdShare.json();
+  const publicDownload = await page.request.get(
+    `api/public/dl/${publicShare.hash}?inline=true`
+  );
+  expect(publicDownload.status()).toBe(200);
+  expect(await publicDownload.text()).toBe("Browser TUS upload");
+  const publicRange = await page.request.get(
+    `api/public/dl/${publicShare.hash}`,
+    { headers: { Range: "bytes=0-6" } }
+  );
+  expect(publicRange.status()).toBe(206);
+  expect(await publicRange.text()).toBe("Browser");
+  await page.goto(`share/${publicShare.hash}`);
+  await expect(
+    page.locator('a[href*="/api/public/dl/"]').first()
+  ).toBeVisible();
   await page.goto("files/review.md");
   await expect(page.locator(".ace_editor")).toBeVisible();
   await expect(page.locator(".ace_editor")).toContainText("Review fixture");

@@ -221,8 +221,8 @@ func (s *ScopedFs) ResolvedPath(name string) (string, error) {
 }
 
 func ResolveVirtualPath(fs afero.Fs, name string) (string, error) {
-	if scoped, ok := fs.(*ScopedFs); ok {
-		return scoped.ResolvedPath(name)
+	if resolver, ok := fs.(interface{ ResolvedPath(string) (string, error) }); ok {
+		return resolver.ResolvedPath(name)
 	}
 	if BasePath(fs) != nil {
 		return (&ScopedFs{base: BasePath(fs), native: true}).ResolvedPath(name)

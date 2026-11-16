@@ -5,14 +5,27 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/filebrowser/filebrowser/v2/files"
 	"github.com/filebrowser/filebrowser/v2/share"
+	"github.com/spf13/afero"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// A file share has a virtual file root. Reads still pass through the owner's
+// confined filesystem; opening an os.Root at the file itself is invalid.
+type sharedFileFs struct{ *afero.ReadOnlyFs }
+
+func (*sharedFileFs) ResolvedPath(name string) (string, error) {
+	if slashClean(name) != "/" {
+		return "", os.ErrPermission
+	}
+	return "/", nil
+}
 
 var withHashFile = func(fn handleFunc) handleFunc {
 	return func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
@@ -71,12 +84,17 @@ var withHashFile = func(fn handleFunc) handleFunc {
 			filePath = ifPath
 		}
 
-		// set fs root to the shared file/folder. Unless external symlinks are
+		// Set a directory root for directory shares. Unless external symlinks are
 		// explicitly allowed, this is a ScopedFs (not a bare BasePathFs) so the
 		// share is also symlink-confined: a link inside the shared subtree that
 		// points elsewhere in the owner's scope — outside the share — must not be
 		// followed.
-		d.user.Fs = files.NewFs(d.user.Fs, basePath, d.server.FollowExternalSymlinks)
+		if file.IsDir {
+			d.user.Fs = files.NewFs(d.user.Fs, basePath, d.server.FollowExternalSymlinks)
+		} else {
+			base := afero.NewBasePathFs(d.user.Fs, basePath)
+			d.user.Fs = &sharedFileFs{ReadOnlyFs: afero.NewReadOnlyFs(base).(*afero.ReadOnlyFs)}
+		}
 
 		// the filesystem is now rebased onto basePath, so paths handed to the
 		// rule checker are relative to it. Resolve them back to the user's
