@@ -2,6 +2,7 @@ package fbhttp
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -23,10 +24,7 @@ var fileMutations = struct {
 // lockFileMutation serializes checks and writes for one destination. Entries
 // disappear after the last waiter, so arbitrary request paths cannot leak locks.
 func lockFileMutation(ctx context.Context, name string) (func(), error) {
-	name = filepath.Clean(name)
-	if runtime.GOOS == "windows" {
-		name = strings.ToLower(name)
-	}
+	name = physicalPathKey(name)
 	fileMutations.Lock()
 	lock := fileMutations.paths[name]
 	if lock == nil {
@@ -50,6 +48,27 @@ func lockFileMutation(ctx context.Context, name string) (func(), error) {
 		releaseRef()
 		return nil, ctx.Err()
 	}
+}
+
+func physicalPathKey(name string) string {
+	name = filepath.Clean(name)
+	target, suffix := name, ""
+	for {
+		resolved, err := filepath.EvalSymlinks(target)
+		if err == nil {
+			name = filepath.Join(resolved, suffix)
+			break
+		}
+		if !os.IsNotExist(err) || filepath.Dir(target) == target {
+			break
+		}
+		suffix = filepath.Join(filepath.Base(target), suffix)
+		target = filepath.Dir(target)
+	}
+	if runtime.GOOS == "windows" {
+		name = strings.ToLower(name)
+	}
+	return name
 }
 
 func internalWritePath(name string) bool {

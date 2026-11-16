@@ -32,8 +32,9 @@ func TestTusPatchEnforcesUploadLength(t *testing.T) {
 	post := handle(tusPostHandler(cache), "", st, &settings.Server{})
 	patch := handle(tusPatchHandler(cache), "", st, &settings.Server{})
 
+	uploadQuery := ""
 	patchReq := func(body string) *httptest.ResponseRecorder {
-		req, _ := http.NewRequest(http.MethodPatch, "/file.txt", strings.NewReader(body))
+		req, _ := http.NewRequest(http.MethodPatch, "/file.txt?"+uploadQuery, strings.NewReader(body))
 		req.Header.Set("X-Auth", signed)
 		req.Header.Set("Content-Type", "application/offset+octet-stream")
 		req.Header.Set("Upload-Offset", "0")
@@ -51,15 +52,16 @@ func TestTusPatchEnforcesUploadLength(t *testing.T) {
 	if recPost.Code != http.StatusCreated {
 		t.Fatalf("POST expected 201, got %d body=%q", recPost.Code, recPost.Body.String())
 	}
+	uploadQuery = strings.SplitN(recPost.Header().Get("Location"), "?", 2)[1]
 
 	// A body far larger than the declared length must be rejected, and nothing
 	// beyond the declared length may reach disk.
 	if rec := patchReq(strings.Repeat("A", 5000)); rec.Code != http.StatusRequestEntityTooLarge {
 		t.Fatalf("over-length PATCH expected 413, got %d body=%q", rec.Code, rec.Body.String())
 	}
-	if fi, err := os.Stat(filepath.Join(userScope, "file.txt")); err != nil {
+	if fi, err := os.Stat(filepath.Join(userScope, "file.txt")); err != nil && !os.IsNotExist(err) {
 		t.Fatalf("stat file.txt: %v", err)
-	} else if fi.Size() > 5 {
+	} else if err == nil && fi.Size() > 5 {
 		t.Fatalf("wrote %d bytes despite Upload-Length 5", fi.Size())
 	}
 

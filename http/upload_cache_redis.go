@@ -2,85 +2,123 @@ package fbhttp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
-	"strconv"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
-// redisUploadCache is an upload cache for multi replica deployments
 type redisUploadCache struct {
-	client *redis.Client
+	client  *redis.Client
+	cleanup *memoryUploadCache
+}
+
+func redisContext() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), 5*time.Second)
 }
 
 func newRedisUploadCache(redisURL string) (*redisUploadCache, error) {
-	if redisURL == "" {
-		return nil, fmt.Errorf("redis URL is required")
-	}
-
 	opts, err := redis.ParseURL(redisURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid redis URL: %w", err)
 	}
-
 	client := redis.NewClient(opts)
-
-	// Test connection
-	if err := client.Ping(context.Background()).Err(); err != nil {
-		return nil, fmt.Errorf("failed to connect to redis: %w", err)
+	ctx, cancel := redisContext()
+	defer cancel()
+	if err := client.Ping(ctx).Err(); err != nil {
+		_ = client.Close()
+		return nil, fmt.Errorf("connect to redis: %w", err)
 	}
-
-	return &redisUploadCache{client: client}, nil
+	return &redisUploadCache{client: client, cleanup: newMemoryUploadCache()}, nil
 }
 
-func (c *redisUploadCache) filePathKey(filePath string) string {
-	return "filebrowser:upload:" + filePath
-}
+func (c *redisUploadCache) filePathKey(key string) string { return "filebrowser:upload:v2:" + key }
 
-// Register stores the upload length. The scoped removal callback is unused by
-// the redis backend, which does not delete partial files on eviction.
-func (c *redisUploadCache) Register(filePath string, fileSize int64, _ func() error) {
-	err := c.client.Set(context.Background(), c.filePathKey(filePath), fileSize, uploadCacheTTL).Err()
+func (c *redisUploadCache) Register(key string, state UploadState, remove func() error) error {
+	encoded, err := json.Marshal(state)
 	if err != nil {
-		log.Printf("failed to register upload in redis cache: %v", err)
+		return err
 	}
-}
-
-func (c *redisUploadCache) Complete(filePath string) {
-	err := c.client.Del(context.Background(), c.filePathKey(filePath)).Err()
+	ctx, cancel := redisContext()
+	defer cancel()
+	created, err := c.client.SetNX(ctx, c.filePathKey(key), encoded, uploadCacheTTL).Result()
 	if err != nil {
-		log.Printf("failed to complete upload in redis cache: %v", err)
+		return err
 	}
-}
-
-func (c *redisUploadCache) GetLength(filePath string) (int64, error) {
-	result, err := c.client.Get(context.Background(), c.filePathKey(filePath)).Result()
-	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			return 0, fmt.Errorf("no active upload found for the given path")
+	if !created {
+		return ErrUploadExists
+	}
+	// A different replica may still be using an upload when our cleanup timer
+	// expires. Recheck shared state before removing this generation's files.
+	cleanupKey := key + "|" + state.ID
+	var cleanup func() error
+	cleanup = func() error {
+		ctx, cancel := redisContext()
+		defer cancel()
+		value, err := c.client.Get(ctx, c.filePathKey(key)).Result()
+		if err != nil && !errors.Is(err, redis.Nil) {
+			c.cleanup.cache.Set(cleanupKey, memoryUploadEntry{state: state, remove: cleanup}, uploadCacheTTL)
+			return err
 		}
-		return 0, fmt.Errorf("redis error: %w", err)
+		var current UploadState
+		if err == nil && json.Unmarshal([]byte(value), &current) == nil && current.ID == state.ID {
+			c.cleanup.cache.Set(cleanupKey, memoryUploadEntry{state: state, remove: cleanup}, uploadCacheTTL)
+			return nil
+		}
+		if remove != nil {
+			return remove()
+		}
+		return nil
 	}
+	c.cleanup.cache.Set(cleanupKey, memoryUploadEntry{state: state, remove: cleanup}, uploadCacheTTL)
+	return nil
+}
 
-	size, err := strconv.ParseInt(result, 10, 64)
+func (c *redisUploadCache) Get(key string) (UploadState, error) {
+	ctx, cancel := redisContext()
+	defer cancel()
+	value, err := c.client.Get(ctx, c.filePathKey(key)).Bytes()
+	if errors.Is(err, redis.Nil) {
+		return UploadState{}, ErrUploadNotFound
+	}
 	if err != nil {
-		return 0, fmt.Errorf("invalid upload length in cache: %w", err)
+		return UploadState{}, err
 	}
-
-	c.Touch(filePath)
-
-	return size, nil
+	var state UploadState
+	if err := json.Unmarshal(value, &state); err != nil {
+		return UploadState{}, err
+	}
+	return state, nil
 }
 
-func (c *redisUploadCache) Touch(filePath string) {
-	err := c.client.Expire(context.Background(), c.filePathKey(filePath), uploadCacheTTL).Err()
+// Compare generations atomically: delayed requests cannot delete or extend a
+// replacement upload's state.
+const uploadGenerationScript = `
+local value = redis.call('GET', KEYS[1])
+if not value then return 0 end
+local state = cjson.decode(value)
+if state.id ~= ARGV[1] then return 0 end
+if ARGV[2] == 'delete' then return redis.call('DEL', KEYS[1]) end
+return redis.call('PEXPIRE', KEYS[1], ARGV[2])
+`
+
+func (c *redisUploadCache) update(key, id, action string) error {
+	ctx, cancel := redisContext()
+	defer cancel()
+	count, err := c.client.Eval(ctx, uploadGenerationScript, []string{c.filePathKey(key)}, id, action).Int()
 	if err != nil {
-		log.Printf("failed to touch upload in redis cache: %v", err)
+		return err
 	}
+	if count == 0 {
+		return ErrUploadNotFound
+	}
+	return nil
 }
 
-func (c *redisUploadCache) Close() {
-	c.client.Close()
+func (c *redisUploadCache) Complete(key, id string) error { return c.update(key, id, "delete") }
+func (c *redisUploadCache) Touch(key, id string) error {
+	return c.update(key, id, fmt.Sprint(uploadCacheTTL.Milliseconds()))
 }
+func (c *redisUploadCache) Close() { c.cleanup.Close(); _ = c.client.Close() }

@@ -150,13 +150,14 @@ func TestUploadIntegrityConcurrentTusEnforcesLength(t *testing.T) {
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("POST got %d", rec.Code)
 	}
+	uploadQuery := strings.SplitN(rec.Header().Get("Location"), "?", 2)[1]
 	arrived := make(chan struct{}, 2)
 	release := make(chan struct{})
 	done := make(chan int, 2)
 	handler := handle(tusPatchHandler(cache), "", st, &settings.Server{})
 	for _, body := range []string{"hello", "world"} {
 		go func(body string) {
-			req := httptest.NewRequest(http.MethodPatch, "/file.txt", &reviewGatedBody{Reader: bytes.NewBufferString(body), arrived: arrived, release: release})
+			req := httptest.NewRequest(http.MethodPatch, "/file.txt?"+uploadQuery, &reviewGatedBody{Reader: bytes.NewBufferString(body), arrived: arrived, release: release})
 			req.Header.Set("X-Auth", token)
 			req.Header.Set("Content-Type", "application/offset+octet-stream")
 			req.Header.Set("Upload-Offset", "0")
