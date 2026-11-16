@@ -4,6 +4,7 @@ import (
 	"github.com/asdine/storm/v3"
 
 	"github.com/filebrowser/filebrowser/v2/auth"
+	"github.com/filebrowser/filebrowser/v2/sessions"
 	"github.com/filebrowser/filebrowser/v2/settings"
 	"github.com/filebrowser/filebrowser/v2/share"
 	"github.com/filebrowser/filebrowser/v2/storage"
@@ -27,5 +28,6 @@ func NewStorage(db *storm.DB) (*storage.Storage, error) {
 		Users:    userStore,
 		Share:    shareStore,
 		Settings: settingsStore,
+		Sessions: sessions.NewStore(db.Bolt),
 	}, nil
 }

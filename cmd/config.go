@@ -225,6 +225,8 @@ func printSettings(ser *settings.Server, set *settings.Settings, auther auth.Aut
 	fmt.Fprintf(w, "\tTLS Cert:\t%s\n", ser.TLSCert)
 	fmt.Fprintf(w, "\tTLS Key:\t%s\n", ser.TLSKey)
 	fmt.Fprintf(w, "\tToken Expiration Time:\t%s\n", ser.TokenExpirationTime)
+	fmt.Fprintf(w, "\tMaximum Upload Bytes:\t%d\n", ser.MaxUploadSize)
+	fmt.Fprintf(w, "\tInsecure Loopback Cookies:\t%t\n", ser.InsecureCookies)
 	fmt.Fprintf(w, "\tExec Enabled:\t%t\n", ser.EnableExec)
 	fmt.Fprintf(w, "\tThumbnails Enabled:\t%t\n", ser.EnableThumbnails)
 	fmt.Fprintf(w, "\tResize Preview:\t%t\n", ser.ResizePreview)
@@ -299,6 +301,10 @@ func getSettings(flags *pflag.FlagSet, set *settings.Settings, ser *settings.Ser
 			ser.BaseURL, err = flags.GetString(flag.Name)
 		case "tokenExpirationTime":
 			ser.TokenExpirationTime, err = flags.GetString(flag.Name)
+		case "maxUploadSize":
+			ser.MaxUploadSize, err = flags.GetInt64(flag.Name)
+		case "insecureCookies":
+			ser.InsecureCookies, err = flags.GetBool(flag.Name)
 		case "disableThumbnails":
 			ser.EnableThumbnails, err = flags.GetBool(flag.Name)
 			ser.EnableThumbnails = !ser.EnableThumbnails

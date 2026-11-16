@@ -100,6 +100,7 @@ func TestExpiredTokenNeedsProxyAssertion(t *testing.T) {
 	expired := &authToken{
 		User: userInfo{ID: 1, Username: "u", Perm: perm},
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        seedSession(t, st, 1),
 			IssuedAt:  jwt.NewNumericDate(time.Now().Add(-2 * time.Hour)),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(-time.Hour)),
 		},
@@ -144,7 +145,7 @@ func TestExpiredTokenNeedsProxyAssertion(t *testing.T) {
 	})
 
 	t.Run("valid token needs no assertion", func(t *testing.T) {
-		if rec := get(signToken(t, perm, key), ""); rec.Code != http.StatusOK {
+		if rec := get(signToken(t, st, perm, key), ""); rec.Code != http.StatusOK {
 			t.Errorf("valid token = %d, body=%q; want 200", rec.Code, rec.Body.String())
 		}
 	})

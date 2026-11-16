@@ -15,7 +15,8 @@
     "lint": "eslint src/",
     "lint:fix": "eslint --fix src/",
     "format": "prettier --write .",
-    "test": "vitest run"
+    "test": "vitest run src/",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@chenfengyuan/vue-number-input": "^2.0.1",

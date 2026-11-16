@@ -43,7 +43,7 @@ export async function fetchURL(
   }
 
   if (auth && res.headers.get("X-Renew-Token") === "true") {
-    await renew(authStore.jwt);
+    await renew();
   }
 
   if (res.status < 200 || res.status > 299) {
@@ -54,7 +54,7 @@ export async function fetchURL(
     );
 
     if (auth && res.status == 401) {
-      logout();
+      await logout();
     }
 
     throw error;

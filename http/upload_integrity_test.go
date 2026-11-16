@@ -86,7 +86,7 @@ func TestUploadIntegrityFailedUploadPreservesDirectory(t *testing.T) {
 	perm := users.Permissions{Create: true, Modify: true}
 	st := scopedUserStorage(t, scope, perm, key)
 	req := httptest.NewRequest(http.MethodPost, "/directory?override=true", strings.NewReader("data"))
-	req.Header.Set("X-Auth", signToken(t, perm, key))
+	req.Header.Set("X-Auth", signToken(t, st, perm, key))
 	rec := httptest.NewRecorder()
 	handle(resourcePostHandler(diskcache.NewNoOp()), "", st, &settings.Server{}).ServeHTTP(rec, req)
 	if _, err := os.Stat(victim); err != nil {
@@ -106,7 +106,7 @@ func TestUploadIntegrityInvalidTusLengthPreservesExistingFile(t *testing.T) {
 	cache := newMemoryUploadCache()
 	t.Cleanup(cache.Close)
 	req := httptest.NewRequest(http.MethodPost, "/keep.txt?override=true", http.NoBody)
-	req.Header.Set("X-Auth", signToken(t, perm, key))
+	req.Header.Set("X-Auth", signToken(t, st, perm, key))
 	req.Header.Set("Upload-Length", "invalid")
 	rec := httptest.NewRecorder()
 	handle(tusPostHandler(cache), "", st, &settings.Server{}).ServeHTTP(rec, req)
@@ -139,7 +139,7 @@ func TestUploadIntegrityConcurrentTusEnforcesLength(t *testing.T) {
 	key := []byte("review-key")
 	perm := users.Permissions{Create: true, Modify: true}
 	st := scopedUserStorage(t, scope, perm, key)
-	token := signToken(t, perm, key)
+	token := signToken(t, st, perm, key)
 	cache := newMemoryUploadCache()
 	t.Cleanup(cache.Close)
 	post := httptest.NewRequest(http.MethodPost, "/file.txt", http.NoBody)

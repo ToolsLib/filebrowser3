@@ -62,6 +62,8 @@ type Server struct {
 	ImageResolutionCal     bool   `json:"imageResolutionCalculation"`
 	AuthHook               string `json:"authHook"`
 	TokenExpirationTime    string `json:"tokenExpirationTime"`
+	MaxUploadSize          int64  `json:"maxUploadSize"`
+	InsecureCookies        bool   `json:"insecureCookies"`
 	FollowExternalSymlinks bool   `json:"followExternalSymlinks"`
 
 	// CaseInsensitiveFs is detected from Root at startup rather than
@@ -81,7 +83,7 @@ func (s *Server) GetTokenExpirationTime(fallback time.Duration) time.Duration {
 	}
 
 	duration, err := time.ParseDuration(s.TokenExpirationTime)
-	if err != nil {
+	if err != nil || duration <= 0 {
 		log.Printf("[WARN] Failed to parse tokenExpirationTime: %v", err)
 		return fallback
 	}

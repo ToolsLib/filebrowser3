@@ -140,6 +140,9 @@ func tusPostHandler(cache UploadCache) handleFunc {
 		if err != nil || length < 0 || length > maxUploadLength {
 			return http.StatusBadRequest, fmt.Errorf("invalid upload length")
 		}
+		if length > uploadSizeLimit(d.server) {
+			return http.StatusRequestEntityTooLarge, nil
+		}
 		key := uploadKey(d, r.URL.Path)
 		unlock, err := lockFileMutation(r.Context(), key)
 		if err != nil {

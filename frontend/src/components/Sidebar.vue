@@ -203,7 +203,13 @@ export default {
     help() {
       this.showHover("help");
     },
-    logout: auth.logout,
+    async logout() {
+      try {
+        await auth.logout();
+      } catch (error) {
+        this.$showError(error);
+      }
+    },
   },
   watch: {
     $route: {

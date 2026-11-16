@@ -154,9 +154,8 @@ const routes = [
 ];
 
 async function initAuth() {
-  if (loginPage) {
-    await validateLogin();
-  } else {
+  await validateLogin();
+  if (!loginPage && !useAuthStore().isLoggedIn) {
     await login("", "", "");
   }
 

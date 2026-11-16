@@ -1,11 +1,14 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/filebrowser/filebrowser/v2/settings"
 	"github.com/filebrowser/filebrowser/v2/users"
@@ -44,7 +47,7 @@ func (a JSONAuth) Auth(r *http.Request, usr users.Store, _ *settings.Settings, s
 
 	// If ReCaptcha is enabled, check the code.
 	if a.ReCaptcha != nil && a.ReCaptcha.Secret != "" {
-		ok, err := a.ReCaptcha.Ok(cred.ReCaptcha)
+		ok, err := a.ReCaptcha.OkContext(r.Context(), cred.ReCaptcha)
 
 		if err != nil {
 			return nil, err
@@ -89,17 +92,21 @@ type ReCaptcha struct {
 
 // Ok checks if a reCaptcha responde is correct.
 func (r *ReCaptcha) Ok(response string) (bool, error) {
+	return r.OkContext(context.Background(), response)
+}
+
+func (r *ReCaptcha) OkContext(ctx context.Context, response string) (bool, error) {
 	body := url.Values{}
 	body.Set("secret", r.Secret)
 	body.Add("response", response)
 
-	client := &http.Client{}
-
-	resp, err := client.Post(
-		r.Host+reCaptchaAPI,
-		"application/x-www-form-urlencoded",
-		strings.NewReader(body.Encode()),
-	)
+	client := &http.Client{Timeout: 10 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, r.Host+reCaptchaAPI, strings.NewReader(body.Encode()))
+	if err != nil {
+		return false, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := client.Do(req)
 	if err != nil {
 		return false, err
 	}
@@ -113,7 +120,14 @@ func (r *ReCaptcha) Ok(response string) (bool, error) {
 		Success bool `json:"success"`
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(&data)
+	limited, err := io.ReadAll(io.LimitReader(resp.Body, (64<<10)+1))
+	if err != nil {
+		return false, err
+	}
+	if len(limited) > 64<<10 {
+		return false, io.ErrShortBuffer
+	}
+	err = json.Unmarshal(limited, &data)
 	if err != nil {
 		return false, err
 	}

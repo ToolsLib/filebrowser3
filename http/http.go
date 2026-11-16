@@ -43,9 +43,11 @@ func NewHandler(
 	api := r.PathPrefix("/api").Subrouter()
 
 	tokenExpirationTime := server.GetTokenExpirationTime(DefaultTokenExpirationTime)
-	api.Handle("/login", monkey(loginHandler(tokenExpirationTime), ""))
-	api.Handle("/signup", monkey(signupHandler, ""))
-	api.Handle("/renew", monkey(renewHandler(tokenExpirationTime), ""))
+	api.Handle("/login", monkey(loginHandler(tokenExpirationTime), "")).Methods("POST")
+	api.Handle("/signup", monkey(signupHandler, "")).Methods("POST")
+	api.Handle("/renew", monkey(renewHandler(tokenExpirationTime), "")).Methods("POST")
+	api.Handle("/logout", monkey(logoutHandler(false), "")).Methods("POST")
+	api.Handle("/logout-all", monkey(logoutHandler(true), "")).Methods("POST")
 
 	users := api.PathPrefix("/users").Subrouter()
 	users.Handle("", monkey(usersGetHandler, "")).Methods("GET")
@@ -87,5 +89,5 @@ func NewHandler(
 	public.PathPrefix("/dl").Handler(monkey(publicDlHandler, "/api/public/dl/")).Methods("GET")
 	public.PathPrefix("/share").Handler(monkey(publicShareHandler, "/api/public/share/")).Methods("GET")
 
-	return securityHeaders(stripPrefix(server.BaseURL, r), store), nil
+	return securityHeaders(stripPrefix(server.BaseURL, requestLimits(r, server)), store), nil
 }

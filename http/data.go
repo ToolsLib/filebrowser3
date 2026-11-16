@@ -12,6 +12,7 @@ import (
 	"github.com/filebrowser/filebrowser/v2/files"
 	"github.com/filebrowser/filebrowser/v2/rules"
 	"github.com/filebrowser/filebrowser/v2/runner"
+	"github.com/filebrowser/filebrowser/v2/sessions"
 	"github.com/filebrowser/filebrowser/v2/settings"
 	"github.com/filebrowser/filebrowser/v2/storage"
 	"github.com/filebrowser/filebrowser/v2/users"
@@ -25,6 +26,7 @@ type data struct {
 	server   *settings.Server
 	store    *storage.Storage
 	user     *users.User
+	session  *sessions.Session
 	raw      interface{}
 
 	// checkerPrefix is prepended to every path before evaluating rules. It is

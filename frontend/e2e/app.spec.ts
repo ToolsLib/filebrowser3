@@ -34,6 +34,17 @@ test("production login, local Ace, save and lazy previews work under CSP", async
   );
   await page.locator('input[type="submit"]').click();
   const accessToken = await (await loginResponse).text();
+  const cookies = await page.context().cookies();
+  for (const name of ["fb_access", "fb_refresh"]) {
+    const cookie = cookies.find((cookie) => cookie.name === name);
+    expect(cookie?.httpOnly).toBe(true);
+    expect(cookie?.sameSite).toBe("Strict");
+    expect(cookie?.path.startsWith("/test-app/")).toBe(true);
+  }
+  expect(await page.evaluate(() => localStorage.getItem("jwt"))).toBeNull();
+  expect(await page.evaluate(() => document.cookie)).not.toMatch(
+    /fb_access|fb_refresh/
+  );
   await expect(page).toHaveURL(/\/files\//);
   await page.goto("files/review.md");
   await expect(page.locator(".ace_editor")).toBeVisible();
@@ -97,4 +108,19 @@ test("production login, local Ace, save and lazy previews work under CSP", async
   expect(errors).toEqual([]);
   expect(violations).toEqual([]);
   expect(externalScripts).toEqual([]);
+  const otherLogin = await page.request.post("api/login", {
+    headers: { "X-Session-Transport": "header" },
+    data: { username: "reviewer", password: "Browser-test-password-42!" },
+  });
+  expect(otherLogin.ok()).toBe(true);
+  const otherAccess = await otherLogin.text();
+  await page.goto("settings/profile");
+  await page.getByRole("button", { name: "Sign out of all sessions" }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  for (const token of [accessToken, otherAccess]) {
+    const revoked = await page.request.get("api/resources/", {
+      headers: { "X-Auth": token },
+    });
+    expect(revoked.status()).toBe(401);
+  }
 });

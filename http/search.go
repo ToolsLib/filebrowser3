@@ -16,7 +16,10 @@ const searchPingInterval = 5
 
 var searchHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	response := make(chan map[string]interface{})
-	ctx, cancel := context.WithCancelCause(r.Context())
+	deadline, stop := context.WithTimeout(r.Context(), 2*time.Minute)
+	defer stop()
+	ctx, cancel := context.WithCancelCause(deadline)
+	defer cancel(nil)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {

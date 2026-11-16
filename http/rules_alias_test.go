@@ -30,7 +30,7 @@ func TestRulesDenySymlinkAliases(t *testing.T) {
 	if err := st.Share.Save(&share.Link{Hash: "alias-share", UserID: 1, Path: "/"}); err != nil {
 		t.Fatal(err)
 	}
-	signed := signToken(t, perm, key)
+	signed := signToken(t, st, perm, key)
 	for _, tc := range []struct {
 		name, method, path string
 		fn                 handleFunc

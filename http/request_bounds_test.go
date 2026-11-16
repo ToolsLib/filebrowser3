@@ -21,7 +21,7 @@ func TestCommandAuthorizationBeforeUpgrade(t *testing.T) {
 		perm := users.Permissions{}
 		st := scopedUserStorage(t, t.TempDir(), perm, key)
 		req := httptest.NewRequest("GET", "/", http.NoBody)
-		req.Header.Set("X-Auth", signToken(t, perm, key))
+		req.Header.Set("X-Auth", signToken(t, st, perm, key))
 		rec := httptest.NewRecorder()
 		handle(commandsHandler, "", st, &settings.Server{EnableExec: enabled}).ServeHTTP(rec, req)
 		if rec.Code != http.StatusForbidden {
@@ -36,7 +36,7 @@ func TestCommandMessageSizeIsBounded(t *testing.T) {
 	st := scopedUserStorage(t, t.TempDir(), perm, key)
 	server := httptest.NewServer(handle(commandsHandler, "", st, &settings.Server{EnableExec: true}))
 	defer server.Close()
-	header := http.Header{"X-Auth": []string{signToken(t, perm, key)}}
+	header := http.Header{"X-Auth": []string{signToken(t, st, perm, key)}}
 	conn, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(server.URL, "http"), header)
 	if err != nil {
 		t.Fatal(err)

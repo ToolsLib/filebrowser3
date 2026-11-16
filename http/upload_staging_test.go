@@ -31,7 +31,7 @@ func TestTusReplacementIsPrivateUntilComplete(t *testing.T) {
 	st := scopedUserStorage(t, scope, perm, key)
 	cache := newMemoryUploadCache()
 	t.Cleanup(cache.Close)
-	token := signToken(t, perm, key)
+	token := signToken(t, st, perm, key)
 	request := func(method, target, body, offset string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(method, target, strings.NewReader(body))
 		req.Header.Set("X-Auth", token)
@@ -108,7 +108,7 @@ func TestTusRegistrationFailurePreservesDestination(t *testing.T) {
 	perm := users.Permissions{Create: true, Modify: true}
 	st := scopedUserStorage(t, scope, perm, key)
 	request := httptest.NewRequest("POST", "/target?override=true", http.NoBody)
-	request.Header.Set("X-Auth", signToken(t, perm, key))
+	request.Header.Set("X-Auth", signToken(t, st, perm, key))
 	request.Header.Set("Upload-Length", "6")
 	rec := httptest.NewRecorder()
 	handle(tusPostHandler(failingRegistrationCache{}), "", st, &settings.Server{}).ServeHTTP(rec, request)
@@ -197,7 +197,7 @@ func TestRedisUploadResumesOnAnotherReplica(t *testing.T) {
 	key := []byte("replica-key")
 	perm := users.Permissions{Create: true, Modify: true}
 	st := scopedUserStorage(t, scope, perm, key)
-	token := signToken(t, perm, key)
+	token := signToken(t, st, perm, key)
 	request := func(cache UploadCache, method, target, body, offset string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(method, target, strings.NewReader(body))
 		req.Header.Set("X-Auth", token)

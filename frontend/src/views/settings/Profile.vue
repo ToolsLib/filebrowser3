@@ -42,6 +42,14 @@
         </div>
 
         <div class="card-action">
+          <button
+            v-if="!noAuth"
+            type="button"
+            class="button button--flat"
+            @click="signOutAll"
+          >
+            Sign out of all sessions
+          </button>
           <input
             class="button button--flat"
             type="submit"
@@ -110,6 +118,7 @@ import Languages from "@/components/settings/Languages.vue";
 import { computed, inject, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { authMethod, noAuth } from "@/utils/constants";
+import { logout } from "@/utils/auth";
 
 const layoutStore = useLayoutStore();
 const authStore = useAuthStore();
@@ -117,6 +126,13 @@ const { t } = useI18n();
 
 const $showSuccess = inject<IToastSuccess>("$showSuccess")!;
 const $showError = inject<IToastError>("$showError")!;
+const signOutAll = async () => {
+  try {
+    await logout(undefined, true);
+  } catch (error) {
+    $showError(error as Error);
+  }
+};
 
 const password = ref<string>("");
 const passwordConf = ref<string>("");
@@ -177,8 +193,8 @@ const updatePassword = async (event: Event) => {
       password: password.value,
     };
     await api.update(data, ["password"], currentPassword.value);
-    authStore.updateUser(data);
     $showSuccess(t("settings.passwordUpdated"));
+    await logout();
   } catch (e: any) {
     $showError(e);
   } finally {

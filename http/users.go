@@ -47,7 +47,7 @@ func getUser(_ http.ResponseWriter, r *http.Request) (*modifyUserRequest, error)
 		return nil, err
 	}
 
-	if req.What != "user" {
+	if req.What != "user" || req.Data == nil {
 		return nil, fberrors.ErrInvalidDataType
 	}
 
@@ -126,6 +126,9 @@ var userDeleteHandler = withSelfOrAdmin(func(_ http.ResponseWriter, r *http.Requ
 	err := d.store.Users.Delete(d.raw.(uint))
 	if err != nil {
 		return errToStatus(err), err
+	}
+	if err := d.store.Sessions.RevokeUser(d.raw.(uint)); err != nil {
+		return sessionError(err)
 	}
 
 	return http.StatusOK, nil
@@ -260,9 +263,26 @@ var userPutHandler = withSelfOrAdmin(func(w http.ResponseWriter, r *http.Request
 		}
 	}
 
+	previous, err := d.store.Users.Get(d.server.Root, d.server.FollowExternalSymlinks, req.Data.ID)
+	if err != nil {
+		return errToStatus(err), err
+	}
 	err = d.store.Users.Update(req.Data, req.Which...)
 	if err != nil {
 		return http.StatusInternalServerError, err
+	}
+	current, err := d.store.Users.Get(d.server.Root, d.server.FollowExternalSymlinks, req.Data.ID)
+	if err != nil {
+		return errToStatus(err), err
+	}
+	if previous.Password != current.Password {
+		if err := d.store.Sessions.RevokeUser(current.ID); err != nil {
+			return sessionError(err)
+		}
+		if current.ID == d.user.ID {
+			clearSessionCookies(w, r, d)
+			w.Header().Set("X-Renew-Token", "false")
+		}
 	}
 
 	return http.StatusOK, nil

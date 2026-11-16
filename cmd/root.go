@@ -107,6 +107,8 @@ func addServerFlags(flags *pflag.FlagSet) {
 	flags.String("socket", "", "socket to listen to (cannot be used with address, port, cert nor key flags)")
 	flags.StringP("baseURL", "b", "", "base url")
 	flags.String("tokenExpirationTime", "2h", "user session timeout")
+	flags.Int64("maxUploadSize", 10<<30, "maximum file upload size in bytes (positive; default 10 GiB)")
+	flags.Bool("insecureCookies", false, "allow non-Secure session cookies for loopback HTTP development")
 	flags.Bool("disableThumbnails", false, "disable image thumbnails")
 	flags.Bool("disablePreviewResize", false, "disable resize of image previews")
 	flags.Bool("disableExec", true, "disables Command Runner feature")
@@ -253,7 +255,9 @@ user created with the credentials from options "username" and "password".`,
 		log.Println("Listening on", listener.Addr().String())
 		srv := &http.Server{
 			Handler:           handler,
-			ReadHeaderTimeout: 60 * time.Second,
+			ReadHeaderTimeout: 10 * time.Second,
+			IdleTimeout:       60 * time.Second,
+			MaxHeaderBytes:    32 << 10,
 		}
 
 		go func() {
@@ -339,6 +343,12 @@ func getServerSettings(v *viper.Viper, st *storage.Storage) (*settings.Server, e
 
 	if v.IsSet("tokenExpirationTime") {
 		server.TokenExpirationTime = v.GetString("tokenExpirationTime")
+	}
+	if v.IsSet("maxUploadSize") {
+		server.MaxUploadSize = v.GetInt64("maxUploadSize")
+	}
+	if v.IsSet("insecureCookies") {
+		server.InsecureCookies = v.GetBool("insecureCookies")
 	}
 
 	if v.IsSet("disableThumbnails") {
@@ -485,6 +495,8 @@ func quickSetup(v *viper.Viper, s *storage.Storage) error {
 		Address:                v.GetString("address"),
 		Root:                   v.GetString("root"),
 		TokenExpirationTime:    v.GetString("tokenExpirationTime"),
+		MaxUploadSize:          v.GetInt64("maxUploadSize"),
+		InsecureCookies:        v.GetBool("insecureCookies"),
 		EnableThumbnails:       !v.GetBool("disableThumbnails"),
 		ResizePreview:          !v.GetBool("disablePreviewResize"),
 		EnableExec:             !v.GetBool("disableExec"),

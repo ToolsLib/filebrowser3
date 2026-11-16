@@ -57,7 +57,7 @@ func (e extractor) ExtractToken(r *http.Request) (string, error) {
 	}
 
 	if r.Method == http.MethodGet {
-		cookie, _ := r.Cookie("auth")
+		cookie, _ := r.Cookie(accessCookie)
 		if cookie != nil && strings.Count(cookie.Value, ".") == 2 {
 			return cookie.Value, nil
 		}
@@ -135,7 +135,17 @@ func withUser(fn handleFunc) handleFunc {
 
 		d.user, err = d.store.Users.Get(d.server.Root, d.server.FollowExternalSymlinks, tk.User.ID)
 		if err != nil {
-			return http.StatusInternalServerError, err
+			return http.StatusUnauthorized, nil
+		}
+		d.session, err = d.store.Sessions.Get(tk.ID)
+		if err != nil {
+			return sessionError(err)
+		}
+		if d.session.UserID != d.user.ID || d.session.Credential != credentialFingerprint(d.user, d.settings) {
+			if err := d.store.Sessions.Revoke(d.session.ID); err != nil {
+				return sessionError(err)
+			}
+			return http.StatusUnauthorized, nil
 		}
 
 		canonicalizeRequestPath(r)
@@ -155,6 +165,9 @@ func withAdmin(fn handleFunc) handleFunc {
 
 func loginHandler(tokenExpireTime time.Duration) handleFunc {
 	return func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+		if !sessionRequest(r) {
+			return http.StatusForbidden, nil
+		}
 		if r.Body != nil {
 			r.Body = http.MaxBytesReader(w, r.Body, maxAuthBodySize)
 		}
@@ -172,7 +185,7 @@ func loginHandler(tokenExpireTime time.Duration) handleFunc {
 			return http.StatusInternalServerError, err
 		}
 
-		return printToken(w, r, d, user, tokenExpireTime)
+		return issueSession(w, r, d, user, tokenExpireTime)
 	}
 }
 
@@ -243,13 +256,12 @@ var signupHandler = func(w http.ResponseWriter, r *http.Request, d *data) (int, 
 }
 
 func renewHandler(tokenExpireTime time.Duration) handleFunc {
-	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		w.Header().Set("X-Renew-Token", "false")
-		return printToken(w, r, d, d.user, tokenExpireTime)
-	})
+	return func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+		return refreshSession(w, r, d, tokenExpireTime)
+	}
 }
 
-func printToken(w http.ResponseWriter, _ *http.Request, d *data, user *users.User, tokenExpirationTime time.Duration) (int, error) {
+func printToken(w http.ResponseWriter, r *http.Request, d *data, user *users.User, tokenExpirationTime time.Duration) (int, error) {
 	claims := &authToken{
 		User: userInfo{
 			ID:                    user.ID,
@@ -266,6 +278,7 @@ func printToken(w http.ResponseWriter, _ *http.Request, d *data, user *users.Use
 			AceEditorTheme:        user.AceEditorTheme,
 		},
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        d.session.ID,
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenExpirationTime)),
 			Issuer:    "File Browser",
@@ -279,6 +292,9 @@ func printToken(w http.ResponseWriter, _ *http.Request, d *data, user *users.Use
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
+	if r.Header.Get("X-Session-Transport") != "header" {
+		setSessionCookie(w, r, d, accessCookie, signed, claims.ExpiresAt.Time)
+	}
 	if _, err := w.Write([]byte(signed)); err != nil {
 		return http.StatusInternalServerError, err
 	}

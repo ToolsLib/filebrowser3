@@ -66,6 +66,7 @@ func TestTusHandlersRejectSymlinkScopeEscape(t *testing.T) {
 	claims := &authToken{
 		User: userInfo{ID: 1, Username: "u", Perm: users.Permissions{Create: true, Modify: true}},
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        seedSession(t, st, 1),
 			IssuedAt:  jwt.NewNumericDate(time.Now().Add(-time.Minute)),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
 		},

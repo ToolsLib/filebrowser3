@@ -85,6 +85,7 @@ const server = spawn(
     password,
     "--port",
     "18089",
+    "--insecureCookies",
     "--baseURL",
     "/test-app",
   ],

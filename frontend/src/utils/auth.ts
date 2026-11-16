@@ -10,9 +10,7 @@ export function parseToken(token: string) {
   // falsy or malformed jwt will throw InvalidTokenError
   const data = jwtDecode<JwtPayload & { user: IUser }>(token);
 
-  document.cookie = `auth=${token}; Path=/; SameSite=Strict;`;
-
-  localStorage.setItem("jwt", token);
+  localStorage.removeItem("jwt");
 
   const authStore = useAuthStore();
   authStore.jwt = token;
@@ -29,18 +27,17 @@ export function parseToken(token: string) {
   const timeout = expiresAt.getTime() - Date.now();
   authStore.setLogoutTimer(
     setSafeTimeout(() => {
-      logout("inactivity");
+      void logout("inactivity").catch(console.error);
     }, timeout)
   );
 }
 
 export async function validateLogin() {
+  localStorage.removeItem("jwt");
   try {
-    if (localStorage.getItem("jwt")) {
-      await renew(<string>localStorage.getItem("jwt"));
-    }
+    await renew();
   } catch (error) {
-    console.warn("Invalid JWT token in storage");
+    if (error instanceof StatusError && error.status === 401) return;
     throw error;
   }
 }
@@ -56,6 +53,7 @@ export async function login(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "X-Requested-With": "FileBrowser",
     },
     body: JSON.stringify(data),
   });
@@ -72,11 +70,25 @@ export async function login(
   }
 }
 
-export async function renew(jwt: string) {
+let renewal: Promise<void> | null = null;
+export function renew() {
+  if (renewal) return renewal;
+  const perform = () => renewSession();
+  renewal = (
+    navigator.locks
+      ? navigator.locks.request(`filebrowser-renew:${baseURL}`, perform)
+      : perform()
+  ).finally(() => {
+    renewal = null;
+  });
+  return renewal;
+}
+
+async function renewSession() {
   const res = await fetch(`${baseURL}/api/renew`, {
     method: "POST",
     headers: {
-      "X-Auth": jwt,
+      "X-Requested-With": "FileBrowser",
     },
   });
 
@@ -112,13 +124,20 @@ export async function signup(username: string, password: string) {
   }
 }
 
-export function logout(reason?: string) {
-  document.cookie = "auth=; Max-Age=0; Path=/; SameSite=Strict;";
-
+export async function logout(reason?: string, all = false) {
   const authStore = useAuthStore();
+  const res = await fetch(`${baseURL}/api/${all ? "logout-all" : "logout"}`, {
+    method: "POST",
+    headers: { "X-Auth": authStore.jwt, "X-Requested-With": "FileBrowser" },
+  });
+  if (!res.ok && res.status !== 401)
+    throw new StatusError(
+      "Could not revoke the session. Please retry signing out.",
+      res.status
+    );
   authStore.clearUser();
 
-  localStorage.setItem("jwt", "");
+  localStorage.removeItem("jwt");
   if (noAuth) {
     window.location.reload();
   } else if (logoutPage !== "/login") {

@@ -70,7 +70,7 @@ func TestResourceCopyDoesNotDereferenceEscapingSymlink(t *testing.T) {
 		fs:    afero.NewBasePathFs(afero.NewOsFs(), userScope),
 	}
 
-	signed := signToken(t, perm, key)
+	signed := signToken(t, st, perm, key)
 
 	t.Run("direct raw read is forbidden", func(t *testing.T) {
 		req, _ := http.NewRequest(http.MethodGet, "/srcdir/link.txt", http.NoBody)
@@ -102,11 +102,12 @@ func TestResourceCopyDoesNotDereferenceEscapingSymlink(t *testing.T) {
 	})
 }
 
-func signToken(t *testing.T, perm users.Permissions, key []byte) string {
+func signToken(t *testing.T, st *storage.Storage, perm users.Permissions, key []byte) string {
 	t.Helper()
 	claims := &authToken{
 		User: userInfo{ID: 1, Username: "u", Perm: perm},
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        seedSession(t, st, 1),
 			IssuedAt:  jwt.NewNumericDate(time.Now().Add(-time.Minute)),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
 		},
@@ -169,7 +170,7 @@ func TestResourcePostRejectsDanglingSymlinkWriteEscape(t *testing.T) {
 	key := []byte("test-signing-key")
 	perm := users.Permissions{Create: true, Modify: true}
 	st := scopedUserStorage(t, userScope, perm, key)
-	signed := signToken(t, perm, key)
+	signed := signToken(t, st, perm, key)
 
 	req, _ := http.NewRequest(http.MethodPost, "/evil?override=true", strings.NewReader("http-outside"))
 	req.Header.Set("X-Auth", signed)
@@ -211,7 +212,7 @@ func TestResourcePostCleanupDoesNotDeleteThroughSymlink(t *testing.T) {
 	// Create-only: Perm.Delete is deliberately false — the bug must not need it.
 	perm := users.Permissions{Create: true}
 	st := scopedUserStorage(t, userScope, perm, key)
-	signed := signToken(t, perm, key)
+	signed := signToken(t, st, perm, key)
 
 	req, _ := http.NewRequest(http.MethodPost, "/link/victim.txt", strings.NewReader("x"))
 	req.Header.Set("X-Auth", signed)
@@ -243,7 +244,7 @@ func TestResourcePostRunsUploadHooksForDirectories(t *testing.T) {
 	}
 
 	req, _ := http.NewRequest(http.MethodPost, "/created/", http.NoBody)
-	req.Header.Set("X-Auth", signToken(t, perm, key))
+	req.Header.Set("X-Auth", signToken(t, st, perm, key))
 	rec := httptest.NewRecorder()
 	handle(resourcePostHandler(diskcache.NewNoOp()), "", st, &settings.Server{EnableExec: true}).ServeHTTP(rec, req)
 
