@@ -27,6 +27,7 @@ vi.mock("@/utils/clipboard", () => ({ read: vi.fn(), copy: vi.fn() }));
 vi.mock("ace-builds", () => ({ default: {}, version: "test" }));
 vi.mock("ace-builds/src-noconflict/ext-language_tools", () => ({}));
 vi.mock("ace-builds/src-noconflict/ext-modelist", () => ({ default: {} }));
+vi.mock("ace-builds/src-noconflict/ext-themelist", () => ({ themesByName: {} }));
 vi.mock("@/components/Breadcrumbs.vue", () => ({ default: {} }));
 vi.mock("@/components/header/Action.vue", () => ({ default: {} }));
 vi.mock("@/components/header/HeaderBar.vue", () => ({ default: {} }));

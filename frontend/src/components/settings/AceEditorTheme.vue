@@ -12,6 +12,7 @@
 
 <script setup lang="ts">
 import { type SelectHTMLAttributes } from "vue";
+import "ace-builds";
 import { themes } from "ace-builds/src-noconflict/ext-themelist";
 
 defineProps<{

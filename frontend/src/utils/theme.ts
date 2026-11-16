@@ -1,6 +1,4 @@
 import { theme } from "./constants";
-import "ace-builds";
-import { themesByName } from "ace-builds/src-noconflict/ext-themelist";
 
 export const getTheme = (): UserTheme => {
   return (document.documentElement.className as UserTheme) || theme;
@@ -35,7 +33,10 @@ export const getMediaPreference = (): UserTheme => {
   }
 };
 
-export const getEditorTheme = (themeName: string) => {
+export const getEditorTheme = (
+  themeName: string,
+  themesByName: Record<string, unknown>
+) => {
   if (!themeName.startsWith("ace/theme/")) {
     themeName = `ace/theme/${themeName}`;
   }

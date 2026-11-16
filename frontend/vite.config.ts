@@ -2,25 +2,41 @@ import path from "node:path";
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
-import legacy from "@vitejs/plugin-legacy";
+import { readdir, readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { compression } from "vite-plugin-compression2";
 
 const plugins = [
   vue(),
   VueI18nPlugin({
-    include: [path.resolve(__dirname, "./src/i18n/**/*.json")],
+    include: [path.resolve(import.meta.dirname, "./src/i18n/**/*.json")],
   }),
-  legacy({
-    // defaults already drop IE support
-    targets: ["defaults"],
-  }),
+  {
+    name: "local-ace-assets",
+    async generateBundle() {
+      const dir = path.join(
+        path.dirname(
+          createRequire(import.meta.url).resolve("ace-builds/package.json")
+        ),
+        "src-min-noconflict"
+      );
+      for (const name of await readdir(dir)) {
+        if (/^(mode|theme|worker)-.*\.js$/.test(name))
+          this.emitFile({
+            type: "asset",
+            fileName: `ace/${name}`,
+            source: await readFile(path.join(dir, name)),
+          });
+      }
+    },
+  },
   compression({ include: /\.js$/, deleteOriginalAssets: false }),
 ];
 
 const resolve = {
   alias: {
     // vue: "@vue/compat",
-    "@/": `${path.resolve(__dirname, "src")}/`,
+    "@/": `${path.resolve(import.meta.dirname, "src")}/`,
   },
 };
 
@@ -46,22 +62,11 @@ export default defineConfig(({ command }) => {
       plugins,
       resolve,
       base: "",
+      html: { cspNonce: "[{[ .CSPNonce ]}]" },
       build: {
         rollupOptions: {
           input: {
-            index: path.resolve(__dirname, "./public/index.html"),
-          },
-          output: {
-            manualChunks: (id) => {
-              // bundle dayjs files in a single chunk
-              // this avoids having small files for each locale
-              if (id.includes("dayjs/")) {
-                return "dayjs";
-                // bundle i18n in a separate chunk
-              } else if (id.includes("i18n/")) {
-                return "i18n";
-              }
-            },
+            index: path.resolve(import.meta.dirname, "./public/index.html"),
           },
         },
       },

@@ -21,7 +21,7 @@ import (
 	"github.com/filebrowser/filebrowser/v2/version"
 )
 
-func handleWithStaticData(w http.ResponseWriter, _ *http.Request, d *data, fSys fs.FS, file, contentType string) (int, error) {
+func handleWithStaticData(w http.ResponseWriter, r *http.Request, d *data, fSys fs.FS, file, contentType string) (int, error) {
 	w.Header().Set("Content-Type", contentType)
 
 	auther, err := d.store.Auth.Get(d.settings.AuthMethod)
@@ -30,6 +30,7 @@ func handleWithStaticData(w http.ResponseWriter, _ *http.Request, d *data, fSys 
 	}
 
 	data := map[string]interface{}{
+		"CSPNonce":              r.Context().Value(nonceContextKey{}),
 		"Name":                  d.settings.Branding.Name,
 		"DisableExternal":       d.settings.Branding.DisableExternal,
 		"DisableUsedPercentage": d.settings.Branding.DisableUsedPercentage,
@@ -109,7 +110,7 @@ func getStaticHandlers(store *storage.Storage, server *settings.Server, assetsFs
 			return http.StatusNotFound, nil
 		}
 
-		w.Header().Set("x-xss-protection", "1; mode=block")
+		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		return handleWithStaticData(w, r, d, assetsFs, "public/index.html", "text/html; charset=utf-8")
 	}, "", store, server)
@@ -150,10 +151,15 @@ func getStaticHandlers(store *storage.Storage, server *settings.Server, assetsFs
 
 		f, err := assetsFs.Open(r.URL.Path + ".gz")
 		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				http.FileServer(http.FS(assetsFs)).ServeHTTP(w, r)
+				return 0, nil
+			}
 			return http.StatusNotFound, err
 		}
 		defer f.Close()
 
+		w.Header().Add("Vary", "Accept-Encoding")
 		acceptEncoding := r.Header.Get("Accept-Encoding")
 		if strings.Contains(acceptEncoding, "gzip") {
 			w.Header().Set("Content-Encoding", "gzip")

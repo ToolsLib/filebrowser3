@@ -1,42 +1,47 @@
 import dayjs from "dayjs";
 import { createI18n } from "vue-i18n";
 
-import("dayjs/locale/ar");
-import("dayjs/locale/bg");
-import("dayjs/locale/ca");
-import("dayjs/locale/cs");
-import("dayjs/locale/de");
-import("dayjs/locale/el");
-import("dayjs/locale/en");
-import("dayjs/locale/es");
-import("dayjs/locale/fr");
-import("dayjs/locale/he");
-import("dayjs/locale/hr");
-import("dayjs/locale/hu");
-import("dayjs/locale/is");
-import("dayjs/locale/it");
-import("dayjs/locale/ja");
-import("dayjs/locale/ko");
-import("dayjs/locale/lv");
-import("dayjs/locale/nb");
-import("dayjs/locale/nl");
-import("dayjs/locale/nl-be");
-import("dayjs/locale/pl");
-import("dayjs/locale/pt-br");
-import("dayjs/locale/pt");
-import("dayjs/locale/ro");
-import("dayjs/locale/ru");
-import("dayjs/locale/sk");
-import("dayjs/locale/sv");
-import("dayjs/locale/tr");
-import("dayjs/locale/uk");
-import("dayjs/locale/vi");
-import("dayjs/locale/zh-cn");
-import("dayjs/locale/zh-tw");
+import english from "./en.json";
 
-// All i18n resources specified in the plugin `include` option can be loaded
-// at once using the import syntax
-import messages from "@intlify/unplugin-vue-i18n/messages";
+const messageLoaders = import.meta.glob<{ default: typeof english }>([
+  "./*.json",
+  "!./en.json",
+]);
+const dateLoaders: Record<string, () => Promise<unknown>> = {
+  ar: () => import("dayjs/locale/ar.js"),
+  bg: () => import("dayjs/locale/bg.js"),
+  ca: () => import("dayjs/locale/ca.js"),
+  cs: () => import("dayjs/locale/cs.js"),
+  de: () => import("dayjs/locale/de.js"),
+  el: () => import("dayjs/locale/el.js"),
+  en: () => import("dayjs/locale/en.js"),
+  es: () => import("dayjs/locale/es.js"),
+  fa: () => import("dayjs/locale/fa.js"),
+  fr: () => import("dayjs/locale/fr.js"),
+  he: () => import("dayjs/locale/he.js"),
+  hr: () => import("dayjs/locale/hr.js"),
+  hu: () => import("dayjs/locale/hu.js"),
+  is: () => import("dayjs/locale/is.js"),
+  it: () => import("dayjs/locale/it.js"),
+  ja: () => import("dayjs/locale/ja.js"),
+  ko: () => import("dayjs/locale/ko.js"),
+  lv: () => import("dayjs/locale/lv.js"),
+  "nl-be": () => import("dayjs/locale/nl-be.js"),
+  nl: () => import("dayjs/locale/nl.js"),
+  no: () => import("dayjs/locale/nb.js"),
+  pl: () => import("dayjs/locale/pl.js"),
+  "pt-br": () => import("dayjs/locale/pt-br.js"),
+  "pt-pt": () => import("dayjs/locale/pt.js"),
+  ro: () => import("dayjs/locale/ro.js"),
+  ru: () => import("dayjs/locale/ru.js"),
+  sk: () => import("dayjs/locale/sk.js"),
+  "sv-se": () => import("dayjs/locale/sv.js"),
+  tr: () => import("dayjs/locale/tr.js"),
+  uk: () => import("dayjs/locale/uk.js"),
+  vi: () => import("dayjs/locale/vi.js"),
+  "zh-cn": () => import("dayjs/locale/zh-cn.js"),
+  "zh-tw": () => import("dayjs/locale/zh-tw.js"),
+};
 
 export function detectLocale() {
   // locale is an RFC 5646 language tag
@@ -128,19 +133,25 @@ export function detectLocale() {
       break;
     case /^sv-se\b/.test(locale):
     case /^sv\b/.test(locale):
-      locale = "sv";
-      break;
-    case /^nl\b/.test(locale):
-      locale = "nl";
+      locale = "sv-se";
       break;
     case /^nl-be\b/.test(locale):
       locale = "nl-be";
+      break;
+    case /^nl\b/.test(locale):
+      locale = "nl";
       break;
     case /^nb\b/.test(locale):
     case /^no\b/.test(locale):
       locale = "no";
       break;
 
+    case /^fa\b/.test(locale):
+      locale = "fa";
+      break;
+    case /^ca\b/.test(locale):
+      locale = "ca";
+      break;
     default:
       locale = "en";
   }
@@ -148,43 +159,49 @@ export function detectLocale() {
   return locale;
 }
 
-// TODO: was this really necessary?
-// function removeEmpty(obj: Record<string, any>): void {
-//   Object.keys(obj)
-//     .filter((k) => obj[k] !== null && obj[k] !== undefined && obj[k] !== "") // Remove undef. and null and empty.string.
-//     .reduce(
-//       (newObj, k) =>
-//         typeof obj[k] === "object"
-//           ? Object.assign(newObj, { [k]: removeEmpty(obj[k]) }) // Recurse.
-//           : Object.assign(newObj, { [k]: obj[k] }), // Copy value.
-//       {}
-//     );
-// }
-
-export const rtlLanguages = ["he", "ar"];
-
+export const rtlLanguages = ["he", "ar", "fa"];
 export const i18n = createI18n({
-  locale: detectLocale(),
+  legacy: false,
+  locale: "en" as string,
   fallbackLocale: "en",
-  messages,
-  // expose i18n.global for outside components
-  legacy: true,
+  messages: { en: english } as Record<string, typeof english>,
 });
 
-export const isRtl = (locale?: string) => {
-  // see below
-  // @ts-expect-error incorrect type when legacy
-  return rtlLanguages.includes(locale || i18n.global.locale.value);
-};
+export const isRtl = (locale?: string) =>
+  rtlLanguages.includes(locale || i18n.global.locale.value);
 
-export function setLocale(locale: string) {
-  dayjs.locale(locale);
-  // according to doc u only need .value if legacy: false but they lied
-  // https://vue-i18n.intlify.dev/guide/essentials/scope.html#local-scope-1
-  // @ts-expect-error incorrect type when legacy
-  i18n.global.locale.value = locale;
+const loaded = new Map<string, Promise<void>>();
+let requestedLocale = "en";
+export async function setLocale(locale: string) {
+  if (locale !== "en" && !messageLoaders[`./${locale}.json`]) locale = "en";
+  requestedLocale = locale;
+  let pending = loaded.get(locale);
+  if (!pending) {
+    pending = Promise.all([
+      locale === "en"
+        ? Promise.resolve({ default: english })
+        : messageLoaders[`./${locale}.json`](),
+      dateLoaders[locale](),
+    ]).then(([messages]) => {
+      i18n.global.setLocaleMessage(locale, messages.default);
+    });
+    loaded.set(locale, pending);
+  }
+  try {
+    await pending;
+    if (requestedLocale !== locale) return;
+    i18n.global.locale.value = locale;
+    dayjs.locale(
+      ({ "pt-pt": "pt", "sv-se": "sv", no: "nb" } as Record<string, string>)[
+        locale
+      ] || locale
+    );
+    setHtmlLocale(locale);
+  } catch (error) {
+    loaded.delete(locale);
+    console.error("Could not load locale", locale, error);
+  }
 }
-
 export function setHtmlLocale(locale: string) {
   const html = document.documentElement;
   html.lang = locale;

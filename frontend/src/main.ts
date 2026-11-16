@@ -9,7 +9,7 @@ import type {
 } from "vue-toastification/dist/types/types";
 import createPinia from "@/stores";
 import router from "@/router";
-import i18n, { isRtl } from "@/i18n";
+import i18n, { isRtl, setLocale, detectLocale } from "@/i18n";
 import App from "@/App.vue";
 import CustomToast from "@/components/CustomToast.vue";
 
@@ -103,4 +103,6 @@ app.provide("$showError", (error: Error | string, displayReport = true) => {
   );
 });
 
-router.isReady().then(() => app.mount("#app"));
+Promise.all([router.isReady(), setLocale(detectLocale())]).then(() =>
+  app.mount("#app")
+);

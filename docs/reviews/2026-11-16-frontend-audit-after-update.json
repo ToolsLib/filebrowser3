@@ -1,0 +1,288 @@
+{
+  "note": "Intermediate audit after direct updates, before targeted transitive fixes; final evidence will supersede this.",
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 2,
+      "moderate": 2,
+      "high": 14,
+      "critical": 0
+    },
+    "dependencies": 609,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 609
+  },
+  "advisories": [
+    {
+      "module_name": "rollup",
+      "severity": "high",
+      "vulnerable_versions": ">=4.0.0 <4.59.0",
+      "patched_versions": ">=4.59.0",
+      "url": "https://github.com/advisories/GHSA-mw96-cpmx-2vgc",
+      "findings": [
+        {
+          "version": "4.57.1",
+          "paths": [
+            ".>@intlify/unplugin-vue-i18n>@rollup/pluginutils>rollup"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "high",
+      "vulnerable_versions": "<0.8.12",
+      "patched_versions": ">=0.8.12",
+      "url": "https://github.com/advisories/GHSA-wh4c-j3r5-mjhp",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "high",
+      "vulnerable_versions": "<0.8.13",
+      "patched_versions": ">=0.8.13",
+      "url": "https://github.com/advisories/GHSA-2v35-w6hq-6mfw",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "high",
+      "vulnerable_versions": "<0.8.13",
+      "patched_versions": ">=0.8.13",
+      "url": "https://github.com/advisories/GHSA-f6ww-3ggp-fr8h",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "high",
+      "vulnerable_versions": "<0.8.13",
+      "patched_versions": ">=0.8.13",
+      "url": "https://github.com/advisories/GHSA-x6wf-f3px-wcqx",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "high",
+      "vulnerable_versions": "<0.8.13",
+      "patched_versions": ">=0.8.13",
+      "url": "https://github.com/advisories/GHSA-j759-j44w-7fr8",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "esbuild",
+      "severity": "low",
+      "vulnerable_versions": ">=0.27.3 <0.28.1",
+      "patched_versions": ">=0.28.1",
+      "url": "https://github.com/advisories/GHSA-g7r4-m6w7-qqqr",
+      "findings": [
+        {
+          "version": "0.27.3",
+          "paths": [
+            ".>vite>esbuild"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "moderate",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "url": "https://github.com/advisories/GHSA-6gmq-8vp8-gcm6",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "high",
+      "vulnerable_versions": ">=0.7.0 <=0.8.13",
+      "patched_versions": ">=0.8.14",
+      "url": "https://github.com/advisories/GHSA-w2rr-34g9-rvrj",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "high",
+      "vulnerable_versions": ">=0.7.0 <=0.8.13",
+      "patched_versions": ">=0.8.14",
+      "url": "https://github.com/advisories/GHSA-4w3w-2rp5-g8jm",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "high",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "url": "https://github.com/advisories/GHSA-c7q8-3ch8-vqpv",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "high",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "url": "https://github.com/advisories/GHSA-27p8-2357-5qqv",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "moderate",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "url": "https://github.com/advisories/GHSA-6h8r-xr42-gp59",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "high",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "url": "https://github.com/advisories/GHSA-8344-3jmq-59r6",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "high",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "url": "https://github.com/advisories/GHSA-x4fp-j954-r2f4",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "high",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "url": "https://github.com/advisories/GHSA-965w-775f-mr7g",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "@xmldom/xmldom",
+      "severity": "high",
+      "vulnerable_versions": ">=0.7.0 <=0.8.14",
+      "patched_versions": ">=0.8.15",
+      "url": "https://github.com/advisories/GHSA-93r5-fhx6-vmg9",
+      "findings": [
+        {
+          "version": "0.7.13",
+          "paths": [
+            ".>epubjs>@xmldom/xmldom"
+          ]
+        }
+      ]
+    },
+    {
+      "module_name": "katex",
+      "severity": "low",
+      "vulnerable_versions": ">=0.11.0 <0.18.2",
+      "patched_versions": ">=0.18.2",
+      "url": "https://github.com/advisories/GHSA-238p-pmpm-9mq7",
+      "findings": [
+        {
+          "version": "0.16.28",
+          "paths": [
+            ".>marked-katex-extension>katex"
+          ]
+        }
+      ]
+    }
+  ]
+}

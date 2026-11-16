@@ -191,11 +191,27 @@ import url from "@/utils/url";
 import { throttle } from "lodash-es";
 import HeaderBar from "@/components/header/HeaderBar.vue";
 import Action from "@/components/header/Action.vue";
-import ExtendedImage from "@/components/files/ExtendedImage.vue";
-import VideoPlayer from "@/components/files/VideoPlayer.vue";
-import CsvViewer from "@/components/files/CsvViewer.vue";
-import { VueReader } from "vue-reader";
-import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from "vue";
+const ExtendedImage = defineAsyncComponent(
+  () => import("@/components/files/ExtendedImage.vue")
+);
+const VideoPlayer = defineAsyncComponent(
+  () => import("@/components/files/VideoPlayer.vue")
+);
+const CsvViewer = defineAsyncComponent(
+  () => import("@/components/files/CsvViewer.vue")
+);
+const VueReader = defineAsyncComponent(() =>
+  import("vue-reader").then((module) => module.VueReader)
+);
+import {
+  computed,
+  defineAsyncComponent,
+  inject,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { Rendition } from "epubjs";
 import { getTheme } from "@/utils/theme";
@@ -205,7 +221,7 @@ import { useI18n } from "vue-i18n";
 // Prevents browser memory issues with large files
 const CSV_MAX_SIZE = 5 * 1024 * 1024;
 
-const location = useStorage("book-progress", 0, undefined, {
+const location = useStorage<string | number>("book-progress", 0, undefined, {
   serializer: {
     read: (v) => JSON.parse(v),
     write: (v) => JSON.stringify(v),
@@ -218,7 +234,7 @@ const size = useStorage("book-size", 120, undefined, {
   },
 });
 
-const locationChange = (epubcifi: number) => {
+const locationChange = (epubcifi: string) => {
   location.value = epubcifi;
 };
 let rendition: Rendition | null = null;
