@@ -16,6 +16,14 @@ The app is published only at `127.0.0.1:8000` by default (`FB_HTTP_PORT` changes
 
 The app runs as an unprivileged user, drops all capabilities, enables no-new-privileges, uses a read-only root filesystem, and has process/memory/CPU limits. Named volumes persist `/srv`, `/config` and `/database`. A separate `/cache` volume stores regenerable previews: Compose sets `FB_CACHE_DIR=/cache` and `FB_IMAGE_PROCESSORS=1` under its one-CPU/1-GiB limit. Preview entries are bounded to 512 MiB total, 8,192 entries, 16 MiB per entry and seven days; least-recently-used entries are evicted as needed. Cache deletion loses only generated previews. Backups do not need this volume. See [performance and limits](performance.md) for image admission and UI pagination. Files and login sessions survive application restarts. Pending in-memory uploads lose their resume state after a restart and must be uploaded again; existing destination files remain protected by staging. Back up served files, configuration and the database together; a database restore also restores the session/revocation state in that backup. `docker compose down` preserves volumes. `down --volumes` deletes them and is for disposable test stacks only.
 
+### Build caching
+
+The Node build keeps the pinned Corepack/pnpm download and pnpm package store in project-scoped BuildKit caches. Install layers remain keyed by `package.json` and `pnpm-lock.yaml`; changed dependencies still resolve against the frozen lockfile. Cache mounts are local to the builder and should be shared only between trusted builds. A fresh builder still needs network access.
+
+Frontend compilation copies only its production source, public assets and build/type configuration. The backend copies frontend Go embedding code and the compiled bundle separately, so unrelated frontend files do not enter its source layer. Documentation, local agent/tooling files, test sources and fixtures are excluded from the Docker context; tests continue to run from the checkout in CI and the Compose smoke harness.
+
+The [Docker optimization review](reviews/2026-11-17-docker-optimization.md) records measured cache behavior and image parity. The runtime remains the same digest-pinned Alpine image, stripped static binary, CA certificates, shell entrypoint, non-root user and health check.
+
 ### Optional Redis upload persistence
 
 Use `compose.redis.yaml` together with the default file when pending uploads should survive brief backend restarts. Redis stores upload metadata; files stay on disk and accounts/sessions stay in Bolt. State expires after three minutes without activity, so restart recovery must happen within that window.

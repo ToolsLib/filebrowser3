@@ -1,0 +1,59 @@
+{
+  "reviewedCommit": "61c408e",
+  "reviewDate": "2026-11-17",
+  "platform": "linux/amd64",
+  "contextBefore": {
+    "files": 473,
+    "bytes": 7724178
+  },
+  "contextAfter": {
+    "bytes": 2406930,
+    "files": 313
+  },
+  "baselineCachedBuild": {
+    "exitCode": 0,
+    "elapsedSeconds": 1.8970248
+  },
+  "baselineDocumentationEdit": {
+    "elapsedSeconds": 3.8028224,
+    "exitCode": 0
+  },
+  "optimizedDocumentationEdit": {
+    "exitCode": 0,
+    "elapsedSeconds": 0.8060228
+  },
+  "images": [
+    {
+      "id": "sha256:adf74833d0b96049e00a8dd8cb2296cb36d896cb132da4b16019ef09561d8f2b",
+      "size": 56268735
+    },
+    {
+      "id": "sha256:adf74833d0b96049e00a8dd8cb2296cb36d896cb132da4b16019ef09561d8f2b",
+      "size": 56268735
+    },
+    {
+      "id": "sha256:adf74833d0b96049e00a8dd8cb2296cb36d896cb132da4b16019ef09561d8f2b",
+      "size": 56268735
+    }
+  ],
+  "binarySHA256": "61ee5ac44f8c1bbd0177fdc99b14650dc0886c266e5dcadf569cf98820ba0a04",
+  "warmOfflineDependencyInstall": {
+    "packages": 367,
+    "reused": 367,
+    "downloaded": 0,
+    "networkDisabledForDependencyStep": true
+  },
+  "validation": {
+    "dockerBuildCheck": "No warnings",
+    "compose": "App-only and optional Redis smoke tests passed",
+    "live": {
+      "health": 200,
+      "publicDownload": 206,
+      "publicRangeBytes": 32,
+      "assetsChecked": 4,
+      "htmlNoncesFresh": true,
+      "previewCacheConfigured": true,
+      "userDataVolumesPreserved": true
+    }
+  }
+}

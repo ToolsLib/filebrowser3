@@ -18,3 +18,21 @@ filebrowser.exe
 frontend/test-results
 frontend/coverage
 .env*
+
+# Local tooling and non-runtime documentation must not enter the build context.
+.claude
+.github
+docs
+branding
+*.md
+tools/performance
+
+# Tests run on the host/CI; neither build stage needs their fixtures or output.
+**/*_test.go
+**/testdata
+**/__tests__
+frontend/e2e
+frontend/playwright.config.ts
+frontend/eslint.config.js
+**/node_modules
+**/*.tsbuildinfo
