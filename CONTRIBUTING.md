@@ -19,7 +19,15 @@ We use [Taskfile](https://taskfile.dev/) to manage the different processes (buil
 
 ## Build
 
-Use Go 1.27.4 for normal builds; Go 1.26.11 is the tested minimum. Node 24.22.2 and the pnpm version pinned in `frontend/package.json` build the assets. CI tests both Go toolchains on Linux and Windows and fails if an unpatched compiler is substituted. `GOTOOLCHAIN=local` makes a chosen test compiler explicit.
+Use Go 1.27.4 for normal builds; Go 1.26.11 is the tested minimum. Node 26.13.1 and the pnpm version pinned in `frontend/package.json` build the assets. CI tests both Go toolchains on Linux and Windows and fails if an unpatched compiler is substituted. `GOTOOLCHAIN=local` makes a chosen test compiler explicit.
+
+With Node 26.13.1 and npm on your PATH, install the project's pinned pnpm once:
+
+```text
+npm --prefix frontend run setup:pnpm
+```
+
+The bootstrap reads the exact version and SHA-512 from `frontend/package.json`, verifies the npm archive before installation, and installs pnpm globally with lifecycle scripts disabled. Docker and CI use the same bootstrap. Corepack is not required. If you previously installed Corepack globally, remove it with `npm uninstall --global corepack` before bootstrapping; rerun the bootstrap after changing Node installations. An optional `-- --prefix <directory>` installs pnpm under a custom npm prefix instead. Add that prefix's `bin` directory to PATH (the prefix itself on Windows); CI does this explicitly for its temporary installation.
 
 You can fully build the project in order to produce a binary by running:
 
@@ -43,8 +51,11 @@ We use [Node.js](https://nodejs.org/en/) on the frontend to manage the build pro
 # From the root of the repo, go to frontend/
 cd frontend
 
+# Install the pinned package manager (once for this Node installation)
+npm run setup:pnpm
+
 # Install the dependencies
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 If you just want to develop the backend, you can create a static build of the frontend:

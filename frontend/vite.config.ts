@@ -1,5 +1,5 @@
 import path from "node:path";
-import { defineConfig } from "vite";
+import { defineConfig, type PluginOption } from "vite";
 import vue from "@vitejs/plugin-vue";
 import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
 import { readdir, readFile } from "node:fs/promises";
@@ -26,7 +26,7 @@ const themes = themeData.map(([caption, explicit, kind]) => {
   const name = explicit || caption.replace(/ /g, "_").toLowerCase();
   return { caption, name, theme: "ace/theme/" + name, isDark: kind === "dark" };
 });
-const plugins = [
+const plugins: PluginOption[] = [
   {
     name: "ace-metadata",
     resolveId(id: string) {

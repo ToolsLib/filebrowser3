@@ -1,17 +1,16 @@
 # syntax=docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
-FROM --platform=$BUILDPLATFORM node:24.22.2-alpine3.23@sha256:0efee1e068d21f6edcab7fa8c962fc4ecd50d4e28727bc23963379b63ee318ab AS assets
+FROM --platform=$BUILDPLATFORM node:26.13.1-alpine3.23@sha256:39d8c143e60e99ae98f014bebea1e72fc96d3c9bdf9504bc3a27af5c05bfa39f AS assets
 WORKDIR /app
-ENV COREPACK_HOME=/var/cache/corepack
-RUN corepack enable
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
-RUN --mount=type=cache,id=filebrowser-next-corepack,target=/var/cache/corepack,sharing=locked \
-    --mount=type=cache,id=filebrowser-next-pnpm,target=/pnpm/store,sharing=locked \
+COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
+COPY frontend/scripts/bootstrap-pnpm.mjs ./scripts/
+RUN --mount=type=cache,id=filebrowser-next-npm,target=/root/.npm,sharing=locked npm run setup:pnpm
+RUN --mount=type=cache,id=filebrowser-next-pnpm,target=/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile --store-dir=/pnpm/store --package-import-method=copy
 # Only files that affect the production bundle belong in this stage.
 COPY frontend/env.d.ts frontend/tsconfig*.json frontend/vite.config.ts frontend/postcss.config.cjs ./
 COPY frontend/src/ ./src/
 COPY frontend/public/ ./public/
-RUN --mount=type=cache,id=filebrowser-next-corepack,target=/var/cache/corepack,sharing=locked pnpm build
+RUN pnpm build
 
 FROM --platform=$BUILDPLATFORM golang:1.27.4-alpine3.23@sha256:f70850ef6ce341e8b6427f677049145d63c0b7ce002d4d7e3d464828b1b96dcd AS backend
 WORKDIR /src

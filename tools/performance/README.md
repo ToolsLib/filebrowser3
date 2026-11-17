@@ -34,7 +34,7 @@ Set `GOMAXPROCS=1` and run `go test -p 1 -tags performance_review ./http -run '^
 node tools/performance/selection.mjs
 ```
 
-Node 24 executes the source TypeScript store. The script compares the current store with no selection, the artificial worst case where every item remains selected, and a Set-based reference implementation that performs the complete state update. Each figure is the median of three calls. The normal file fetch flow clears selection first, so the all-selected result must not be described as the cost of every navigation.
+Node 26 executes the source TypeScript store. The script compares the current store with no selection, the artificial worst case where every item remains selected, and a Set-based reference implementation that performs the complete state update. Each figure is the median of three calls. The normal file fetch flow clears selection first, so the all-selected result must not be described as the cost of every navigation.
 
 ## Production browser workflows
 
@@ -56,7 +56,7 @@ The browser probe records complete listing response times and sizes, actual resp
 node tools/performance/selection.mjs
 ```
 
-Node 24 executes the source TypeScript store. The script compares the current store with no selection, the artificial worst case where every item remains selected, and a Set-based reference implementation that performs the complete state update. Each figure is the median of three calls. The normal file fetch flow clears selection first, so the all-selected result must not be described as the cost of every navigation.
+Node 26 executes the source TypeScript store. The script compares the current store with no selection, the artificial worst case where every item remains selected, and a Set-based reference implementation that performs the complete state update. Each figure is the median of three calls. The normal file fetch flow clears selection first, so the all-selected result must not be described as the cost of every navigation.
 
 ## Production browser workflows
 

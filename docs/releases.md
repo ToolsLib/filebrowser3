@@ -77,7 +77,7 @@ uploaded, inspect the existing draft/tag/image before rerunning.
 
 ## Installing an image release
 
-Docker Compose and Node 24 are needed for the repository's secret helper; a Go
+Docker Compose and Node 26 are needed for the repository's secret helper; a Go
 compiler is not required when using `--image`:
 
 ```text

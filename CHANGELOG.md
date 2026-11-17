@@ -7,6 +7,7 @@ First independent ToolsLib release candidate, based on upstream File Browser v2.
 - Hardened filesystem confinement, authorization, sessions and request limits.
 - Safe staged uploads, resumable-upload recovery and optional Redis coordination.
 - Updated dependencies and a modernized Vue interface.
+- Node 26 build tooling with a directly installed, SHA-512-pinned pnpm bootstrap.
 - Bounded file/CSV pages, deferred previews, thumbnail caching and compression.
 - Windows preview cache replacement and eviction remain safe during active reads.
 - Restored confined single-file public downloads.

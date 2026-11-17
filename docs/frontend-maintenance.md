@@ -1,8 +1,8 @@
 # Frontend maintenance and browser support
 
-The frontend uses pnpm (the exact version is in `frontend/package.json`) and Node 24. Do not introduce a second npm/yarn lockfile. Use `pnpm install --frozen-lockfile` for reproducible installs.
+The frontend uses Node 26.13.1 and pnpm 10 (the exact version and SHA-512 are in `frontend/package.json`). Run `npm --prefix frontend run setup:pnpm` once with that Node installation to install pnpm directly. The bootstrap verifies the archive before invoking npm with lifecycle scripts disabled, and checks the installed version. `pnpm-workspace.yaml` scopes installation to the frontend package, rejects a mismatched pnpm version and disables pnpm's automatic version downloads. Docker and CI use this same bootstrap without Corepack. Do not introduce a second npm/yarn lockfile. Use `pnpm install --frozen-lockfile` for reproducible installs.
 
-The November 2026 update migrates VueUse to 15, Pinia to 4, CSV Parse to 7, TypeScript to 6, and Vitest to 5, alongside routine updates of Vue, Router, Vite, i18n, DOMPurify and the tooling. Node type definitions stay on the Node 24 line. TypeScript 7 is outside the declared support range of Vue's type checker and typescript-eslint. Video.js stays on patched 8.24.2 because the maintained mobile UI plugin declares Video.js 8 support. KaTeX stays on 0.18, within the extension's supported peer range. These compatibility decisions require reevaluation when the dependent tools add support.
+The November 2026 update migrates VueUse to 15, Pinia to 4, CSV Parse to 7, TypeScript to 6, and Vitest to 5, alongside routine updates of Vue, Router, Vite, i18n, DOMPurify and the tooling. Node type definitions and the build configuration target Node 26. TypeScript 7 is outside the declared support range of Vue's type checker and typescript-eslint. Video.js stays on patched 8.24.2 because the maintained mobile UI plugin declares Video.js 8 support. KaTeX stays on 0.18, within the extension's supported peer range. These compatibility decisions require reevaluation when the dependent tools add support.
 
 The remaining inherited transitive advisories were addressed with explicit pnpm overrides for Rollup, esbuild, xmldom and KaTeX. They are tested through a production build, unit tests, and browser exercises of Markdown, EPUB/XML parsing and media. The saved audit snapshots distinguish the original vulnerabilities, intermediate upgrade state, and final zero-advisory tree. Review overrides during each dependency update; remove them when parents resolve patched versions themselves.
 
@@ -17,6 +17,8 @@ Ace modes, themes and workers are emitted under `/static/ace/<locked-version>/` 
 Checks from `frontend`:
 
 ```text
+npm run setup:pnpm
+node --test scripts/bootstrap-pnpm.test.mjs
 pnpm install --frozen-lockfile
 pnpm lint
 pnpm typecheck

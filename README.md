@@ -17,7 +17,7 @@ Planned public image: [toolslib/filebrowser3](https://hub.docker.com/r/toolslib/
 
 ## Try locally
 
-Once the candidate image is published, use Docker Compose and Node 24:
+Once the candidate image is published, use Docker Compose and Node 26:
 
 ```text
 git clone https://github.com/ToolsLib/filebrowser3.git
