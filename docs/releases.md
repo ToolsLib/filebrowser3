@@ -2,8 +2,9 @@
 
 File Browser 3 is published from https://github.com/ToolsLib/filebrowser3.
 The public Docker Hub image is `toolslib/filebrowser3`.
-The first planned release candidate is **v1.0.0-rc.1**; check the repository's
-Releases page and Actions run for publication status.
+The first release candidate, **[v1.0.0-rc.1](https://github.com/ToolsLib/filebrowser3/releases/tag/v1.0.0-rc.1)**,
+is published with standalone archives, checksums and the multi-platform image.
+Its [release workflow](https://github.com/ToolsLib/filebrowser3/actions/runs/44098329908) passed.
 
 ## Release channels
 
