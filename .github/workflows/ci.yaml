@@ -27,10 +27,15 @@ jobs:
         with:
           node-version: "26.13.1"
       - name: Install integrity-pinned pnpm without Corepack
-        run: npm --prefix frontend run setup:pnpm
+        run: |
+          pnpm_prefix="$RUNNER_TEMP/filebrowser3-pnpm"
+          npm --prefix frontend run setup:pnpm -- --prefix "$pnpm_prefix"
+          echo "$pnpm_prefix/bin" >> "$GITHUB_PATH"
       - name: Locate pnpm store
         id: pnpm-store
-        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+        run: |
+          store_path=$(pnpm store path --silent)
+          echo "path=$store_path" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ steps.pnpm-store.outputs.path }}
@@ -222,10 +227,15 @@ jobs:
         with:
           node-version: "26.13.1"
       - name: Install integrity-pinned pnpm without Corepack
-        run: npm --prefix frontend run setup:pnpm
+        run: |
+          pnpm_prefix="$RUNNER_TEMP/filebrowser3-pnpm"
+          npm --prefix frontend run setup:pnpm -- --prefix "$pnpm_prefix"
+          echo "$pnpm_prefix/bin" >> "$GITHUB_PATH"
       - name: Locate pnpm store
         id: pnpm-store
-        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+        run: |
+          store_path=$(pnpm store path --silent)
+          echo "path=$store_path" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ steps.pnpm-store.outputs.path }}

@@ -27,7 +27,7 @@ With Node 26.13.1 and npm on your PATH, install the project's pinned pnpm once:
 npm --prefix frontend run setup:pnpm
 ```
 
-The bootstrap reads the exact version and SHA-512 from `frontend/package.json`, verifies the npm archive before installation, and installs pnpm globally with lifecycle scripts disabled. Docker and CI use the same bootstrap. Corepack is not required. If you previously installed Corepack globally, remove it with `npm uninstall --global corepack` before bootstrapping; rerun the bootstrap after changing Node installations. An optional `-- --prefix <directory>` installs pnpm under a custom npm prefix instead.
+The bootstrap reads the exact version and SHA-512 from `frontend/package.json`, verifies the npm archive before installation, and installs pnpm globally with lifecycle scripts disabled. Docker and CI use the same bootstrap. Corepack is not required. If you previously installed Corepack globally, remove it with `npm uninstall --global corepack` before bootstrapping; rerun the bootstrap after changing Node installations. An optional `-- --prefix <directory>` installs pnpm under a custom npm prefix instead. Add that prefix's `bin` directory to PATH (the prefix itself on Windows); CI does this explicitly for its temporary installation.
 
 You can fully build the project in order to produce a binary by running:
 
