@@ -5,7 +5,7 @@ This is ToolsLib/filebrowser3, an independent fork of archived upstream File Bro
 - The application release line is v1.x; the inherited Go module path remains `github.com/filebrowser/filebrowser/v2` as an internal build identity.
 - Preserve filesystem confinement, alias-aware authorization, session revocation and durable upload staging.
 - Keep command execution and external symlinks disabled by default. Do not remove safeguards to improve benchmarks.
-- Use Go 1.27.4 for normal builds; Go 1.26.11 is the tested minimum. Frontend tooling is pinned in frontend/package.json.
+- Go 1.27.4 is the minimum supported version and the pinned compiler for CI and container builds. Frontend tooling is pinned in frontend/package.json.
 - Run appropriate checks from CONTRIBUTING.md and retain Linux race coverage for filesystem and upload changes.
 - Publishing is restricted to the ToolsLib repository and Docker Hub `toolslib/filebrowser3`. See docs/releases.md.
 - Release candidates never update `latest`. Keep LICENSE, NOTICE and upstream attribution.

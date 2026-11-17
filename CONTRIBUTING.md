@@ -19,7 +19,7 @@ We use [Taskfile](https://taskfile.dev/) to manage the different processes (buil
 
 ## Build
 
-Use Go 1.27.4 for normal builds; Go 1.26.11 is the tested minimum. Node 26.13.1 and the pnpm version pinned in `frontend/package.json` build the assets. CI tests both Go toolchains on Linux and Windows and fails if an unpatched compiler is substituted. `GOTOOLCHAIN=local` makes a chosen test compiler explicit.
+Go 1.27.4 is the minimum supported version and the pinned compiler for CI and container builds. CI runs backend tests and vulnerability scans on Linux and Windows; Linux tests include the race detector. `GOTOOLCHAIN=local` keeps the selected compiler explicit and rejects older compilers. Node 26.13.1 and the pnpm version pinned in `frontend/package.json` build the assets.
 
 With Node 26.13.1 and npm on your PATH, install the project's pinned pnpm once:
 
