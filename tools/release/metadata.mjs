@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { appendFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 
 export function releaseMetadata(tag, revision) {
   const match =
@@ -30,7 +31,12 @@ export function releaseMetadata(tag, revision) {
   };
 }
 
-if (process.env.GITHUB_REF_NAME && process.env.GITHUB_OUTPUT) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href &&
+  process.env.GITHUB_REF_NAME &&
+  process.env.GITHUB_OUTPUT
+) {
   const metadata = releaseMetadata(
     process.env.GITHUB_REF_NAME,
     process.env.GITHUB_SHA,
