@@ -89,7 +89,7 @@
     "noPreview": "L'aperçu n'est pas disponible pour ce fichier.",
     "csvTooLarge": "Le fichier CSV est trop volumineux pour être prévisualisé (>5MB). Veuillez le télécharger pour le voir.",
     "csvLoadFailed": "Impossible de charger le fichier CSV.",
-    "showingRows": "Affichage de {count} ligne(s)",
+    "showingRows": "{count} lignes au total",
     "columnSeparator": "Séparateur de Colonnes",
     "csvSeparators": {
       "comma": "Virgule (,)",
