@@ -60,7 +60,7 @@ func (f *FileCache) initialize() {
 				_ = f.fs.Remove(name)
 				return nil
 			}
-			name = strings.TrimLeft(filepath.Clean(name), string(filepath.Separator)+"/")
+			name = strings.TrimLeft(filepath.Clean(name), `/\`)
 			f.entries[name] = entry{size: info.Size(), touched: info.ModTime()}
 			f.bytes += info.Size()
 			f.pruneLocked()
