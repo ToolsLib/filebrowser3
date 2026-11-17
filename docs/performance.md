@@ -16,6 +16,8 @@ Markdown, math and sanitization code load when Markdown preview is requested. TI
 
 ## Thumbnail generation and cache
 
+On Windows, the OS-backed cache opens readers with delete sharing and uses native replacement when a preview is already open. Active readers keep the old bytes while subsequent requests see the replacement. This retains streaming without copying entire cached previews into memory. Concurrent replacement requires filesystem support for Windows POSIX rename semantics; cache write failures leave the generated preview available to the request.
+
 Concurrent requests for the same physical file version and preview size share generation. A caller can cancel independently; generation is canceled when no callers remain. At most 128 distinct in-flight keys are retained. Cache keys include file size, nanosecond modification time and a format version. Every HTTP request still performs current authorization before returning a cached image or 304.
 
 Compose enables a dedicated `/cache` volume and one image processor. Other deployments can set `cacheDir`/`FB_CACHE_DIR`; an empty value keeps the no-op cache. Disk cache defaults are 512 MiB, 8,192 entries, 16 MiB per entry and seven days. Entries are atomically replaced, evicted by recent access and served from seekable files. A cache failure falls back to generation. Use one application process per cache directory, consistent with the supported Bolt database topology. Preview data is regenerable and need not be backed up.
