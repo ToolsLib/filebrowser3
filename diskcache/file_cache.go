@@ -35,7 +35,7 @@ type FileCache struct {
 
 func New(fs afero.Fs, root string) *FileCache { return NewWithLimit(fs, root, DefaultMaxBytes) }
 func NewWithLimit(fs afero.Fs, root string, maxBytes int64) *FileCache {
-	return &FileCache{fs: afero.NewBasePathFs(fs, root), entries: make(map[string]entry), maxBytes: maxBytes}
+	return &FileCache{fs: afero.NewBasePathFs(cacheFilesystem(fs), root), entries: make(map[string]entry), maxBytes: maxBytes}
 }
 func (f *FileCache) initialize() {
 	f.once.Do(func() {

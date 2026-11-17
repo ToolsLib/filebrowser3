@@ -8,6 +8,7 @@ First independent ToolsLib release candidate, based on upstream File Browser v2.
 - Safe staged uploads, resumable-upload recovery and optional Redis coordination.
 - Updated dependencies and a modernized Vue interface.
 - Bounded file/CSV pages, deferred previews, thumbnail caching and compression.
+- Windows preview cache replacement and eviction remain safe during active reads.
 - Restored confined single-file public downloads.
 - Source/prebuilt Compose deployments, versioned amd64/arm64 images and release checksums/attestations.
 
