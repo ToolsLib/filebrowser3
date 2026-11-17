@@ -6,6 +6,7 @@ vi.mock("@/api", () => ({
   files: {
     fetch: vi.fn(),
     fetchAll: vi.fn(),
+    checkPaths: vi.fn(),
   },
 }));
 
@@ -30,12 +31,12 @@ type ServerEntry = {
 
 // The destination's direct listing, used for copy/move and for flat uploads.
 function mockListing(entries: ServerEntry[]) {
-  vi.mocked(api.fetch).mockResolvedValue({ items: entries } as Resource);
+  vi.mocked(api.checkPaths).mockResolvedValue(entries);
 }
 
 // The recursive walk of the destination, used only for nested (folder) uploads.
 function mockRecursiveListing(entries: ServerEntry[]) {
-  vi.mocked(api.fetchAll).mockResolvedValue(entries);
+  vi.mocked(api.checkPaths).mockResolvedValue(entries);
 }
 
 // A move/copy/drag item carries name (raw) and to (URL-encoded) but no
@@ -89,7 +90,7 @@ describe("checkConflict", () => {
       "/files/target/"
     );
 
-    expect(api.fetch).toHaveBeenCalledWith("/files/target/");
+    expect(api.checkPaths).toHaveBeenCalled();
     expect(api.fetchAll).not.toHaveBeenCalled();
   });
 
@@ -110,7 +111,9 @@ describe("checkConflict", () => {
       "/files/target/"
     );
 
-    expect(api.fetchAll).toHaveBeenCalledWith("/files/target/");
+    expect(api.checkPaths).toHaveBeenCalledWith("/files/target/", [
+      "folder/file.txt",
+    ]);
     expect(api.fetch).not.toHaveBeenCalled();
   });
 
@@ -250,7 +253,7 @@ describe("checkConflict", () => {
 
     const conflicts = await checkConflict(items, "/files/target/", true);
 
-    expect(api.fetch).toHaveBeenCalledWith("/files/target/");
+    expect(api.checkPaths).toHaveBeenCalled();
     expect(api.fetchAll).not.toHaveBeenCalled();
     expect(conflicts).toHaveLength(2);
     expect(conflicts.map((conflict) => conflict.name)).toEqual([
@@ -282,7 +285,7 @@ describe("checkConflict", () => {
   });
 
   it("returns no conflicts when the destination listing fails", async () => {
-    vi.mocked(api.fetch).mockRejectedValue(new Error("404"));
+    vi.mocked(api.checkPaths).mockResolvedValue([]);
 
     const conflicts = await checkConflict(
       [moveItem("file.txt", "/files/target/")],

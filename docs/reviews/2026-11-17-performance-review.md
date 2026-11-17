@@ -1,5 +1,7 @@
 # Application performance review
 
+Implementation completed: see the [completion report](2026-11-17-performance-completion.md) and [finding status](performance-fix-status.md). The review below preserves the original baseline evidence.
+
 Reviewed commit: `0f110fd`. Review date: 17 November 2026. Status: **proposed improvements; application code and deployment unchanged**.
 
 The largest opportunities are directory/subtitle expansion, bounded rendering of file lists and CSV tables, thumbnail generation, and avoiding complete directory reloads for sorting. Network compression is also a useful, comparatively contained improvement. No additional framework, database migration, or Redis service is required for these first steps.

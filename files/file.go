@@ -1,6 +1,7 @@
 package files
 
 import (
+	"context"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -17,7 +18,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -27,34 +27,30 @@ import (
 	"github.com/spf13/afero"
 )
 
-var (
-	reSubDirs = regexp.MustCompile("(?i)^sub(s|titles)$")
-	reSubExts = regexp.MustCompile("(?i)(.vtt|.srt|.ass|.ssa)$")
-)
-
 // FileInfo describes a file.
 type FileInfo struct {
 	*Listing
-	Fs         afero.Fs          `json:"-"`
-	Path       string            `json:"path"`
-	Name       string            `json:"name"`
-	Size       int64             `json:"size"`
-	Extension  string            `json:"extension"`
-	ModTime    time.Time         `json:"modified"`
-	Mode       os.FileMode       `json:"mode"`
-	IsDir      bool              `json:"isDir"`
-	IsSymlink  bool              `json:"isSymlink"`
-	Type       string            `json:"type"`
-	Subtitles  []string          `json:"subtitles,omitempty"`
-	Content    string            `json:"content,omitempty"`
-	Checksums  map[string]string `json:"checksums,omitempty"`
-	Token      string            `json:"token,omitempty"`
-	currentDir []os.FileInfo     `json:"-"`
-	Resolution *ImageResolution  `json:"resolution,omitempty"`
+	Fs           afero.Fs          `json:"-"`
+	Path         string            `json:"path"`
+	Name         string            `json:"name"`
+	Size         int64             `json:"size"`
+	Extension    string            `json:"extension"`
+	ModTime      time.Time         `json:"modified"`
+	Mode         os.FileMode       `json:"mode"`
+	IsDir        bool              `json:"isDir"`
+	IsSymlink    bool              `json:"isSymlink"`
+	Type         string            `json:"type"`
+	Subtitles    []string          `json:"subtitles,omitempty"`
+	Content      string            `json:"content,omitempty"`
+	Checksums    map[string]string `json:"checksums,omitempty"`
+	Token        string            `json:"token,omitempty"`
+	listingEntry bool              `json:"-"`
+	Resolution   *ImageResolution  `json:"resolution,omitempty"`
 }
 
 // FileOptions are the options when getting a file info.
 type FileOptions struct {
+	Context    context.Context
 	Fs         afero.Fs
 	Path       string
 	Modify     bool
@@ -64,6 +60,9 @@ type FileOptions struct {
 	Token      string
 	Checker    rules.Checker
 	Content    bool
+	// LeanListing classifies known extensions without opening every child.
+	// File detail requests still inspect content and discover subtitles.
+	LeanListing bool
 }
 
 type ImageResolution struct {
@@ -75,6 +74,13 @@ type ImageResolution struct {
 // object will be automatically filled depending on if it is a directory
 // or a file. If it's a video file, it will also detect any subtitles.
 func NewFileInfo(opts *FileOptions) (*FileInfo, error) {
+	ctx := opts.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if !opts.Checker.Check(opts.Path) {
 		return nil, os.ErrPermission
 	}
@@ -91,7 +97,7 @@ func NewFileInfo(opts *FileOptions) (*FileInfo, error) {
 
 	if opts.Expand {
 		if file.IsDir {
-			if err := file.readListing(opts.Checker, opts.ReadHeader, opts.CalcImgRes); err != nil {
+			if err := file.readListing(ctx, opts.Checker, opts.ReadHeader, opts.CalcImgRes, opts.LeanListing); err != nil {
 				return nil, err
 			}
 			return file, nil
@@ -229,7 +235,7 @@ func (i *FileInfo) detectType(modify, saveContent, readHeader bool, calcImgRes b
 	// of files couldn't be opened: we'd have immediately
 	// a 500 even though it doesn't matter. So we just log it.
 
-	mimetype := mime.TypeByExtension(i.Extension)
+	mimetype := strings.Split(mime.TypeByExtension(i.Extension), ";")[0]
 
 	var buffer []byte
 	if readHeader {
@@ -243,7 +249,9 @@ func (i *FileInfo) detectType(modify, saveContent, readHeader bool, calcImgRes b
 	switch {
 	case strings.HasPrefix(mimetype, "video"):
 		i.Type = "video"
-		i.detectSubtitles()
+		if !i.listingEntry {
+			i.detectSubtitles()
+		}
 		return nil
 	case strings.HasPrefix(mimetype, "audio"):
 		i.Type = "audio"
@@ -262,7 +270,7 @@ func (i *FileInfo) detectType(modify, saveContent, readHeader bool, calcImgRes b
 	case strings.HasSuffix(mimetype, "pdf"):
 		i.Type = "pdf"
 		return nil
-	case (strings.HasPrefix(mimetype, "text") || !isBinary(buffer)) && i.Size <= 10*1024*1024: // 10 MB
+	case (strings.HasPrefix(mimetype, "text") || strings.HasSuffix(mimetype, "json") || strings.HasSuffix(mimetype, "xml") || (readHeader && !isBinary(buffer))) && i.Size <= 10*1024*1024: // 10 MB
 		i.Type = "text"
 
 		if !modify {
@@ -337,16 +345,10 @@ func (i *FileInfo) detectSubtitles() {
 	ext := filepath.Ext(i.Path)
 
 	// detect multiple languages. Base*.vtt
-	parentDir := strings.TrimRight(i.Path, i.Name)
-	var dir []os.FileInfo
-	if len(i.currentDir) > 0 {
-		dir = i.currentDir
-	} else {
-		var err error
-		dir, err = afero.ReadDir(i.Fs, parentDir)
-		if err != nil {
-			return
-		}
+	parentDir := path.Dir(i.Path)
+	dir, err := afero.ReadDir(i.Fs, parentDir)
+	if err != nil {
+		return
 	}
 
 	base := strings.TrimSuffix(i.Name, ext)
@@ -354,7 +356,7 @@ func (i *FileInfo) detectSubtitles() {
 		// load all supported subtitles from subs directories
 		// should cover all instances of subtitle distributions
 		// like tv-shows with multiple episodes in single dir
-		if f.IsDir() && reSubDirs.MatchString(f.Name()) {
+		if f.IsDir() && (strings.EqualFold(f.Name(), "subs") || strings.EqualFold(f.Name(), "subtitles")) {
 			subsDir := path.Join(parentDir, f.Name())
 			i.loadSubtitles(subsDir, base, true)
 		} else if isSubtitleMatch(f, base) {
@@ -378,7 +380,12 @@ func (i *FileInfo) loadSubtitles(subsPath, baseName string, recursive bool) {
 }
 
 func IsSupportedSubtitle(fileName string) bool {
-	return reSubExts.MatchString(fileName)
+	switch strings.ToLower(filepath.Ext(fileName)) {
+	case ".vtt", ".srt", ".ass", ".ssa":
+		return true
+	default:
+		return false
+	}
 }
 
 func isSubtitleMatch(f fs.FileInfo, baseName string) bool {
@@ -390,7 +397,7 @@ func (i *FileInfo) addSubtitle(fPath string) {
 	i.Subtitles = append(i.Subtitles, fPath)
 }
 
-func (i *FileInfo) readListing(checker rules.Checker, readHeader bool, calcImgRes bool) error {
+func (i *FileInfo) readListing(ctx context.Context, checker rules.Checker, readHeader bool, calcImgRes bool, lean bool) error {
 	dir, err := readDir(i.Fs, i.Path)
 	if err != nil {
 		return err
@@ -403,6 +410,9 @@ func (i *FileInfo) readListing(checker rules.Checker, readHeader bool, calcImgRe
 	}
 
 	for _, f := range dir {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		name := f.Name()
 		fPath := path.Join(i.Path, name)
 
@@ -431,25 +441,16 @@ func (i *FileInfo) readListing(checker rules.Checker, readHeader bool, calcImgRe
 		}
 
 		file := &FileInfo{
-			Fs:         i.Fs,
-			Name:       name,
-			Size:       f.Size(),
-			ModTime:    f.ModTime(),
-			Mode:       f.Mode(),
-			IsDir:      f.IsDir(),
-			IsSymlink:  isSymlink,
-			Extension:  filepath.Ext(name),
-			Path:       fPath,
-			currentDir: dir,
-		}
-
-		if !file.IsDir && strings.HasPrefix(mime.TypeByExtension(file.Extension), "image/") && calcImgRes {
-			resolution, err := calculateImageResolution(file.Fs, file.Path)
-			if err != nil {
-				log.Printf("Error calculating resolution for image %s: %v", file.Path, err)
-			} else {
-				file.Resolution = resolution
-			}
+			Fs:           i.Fs,
+			Name:         name,
+			Size:         f.Size(),
+			ModTime:      f.ModTime(),
+			Mode:         f.Mode(),
+			IsDir:        f.IsDir(),
+			IsSymlink:    isSymlink,
+			Extension:    filepath.Ext(name),
+			Path:         fPath,
+			listingEntry: true,
 		}
 
 		if file.IsDir {
@@ -460,7 +461,10 @@ func (i *FileInfo) readListing(checker rules.Checker, readHeader bool, calcImgRe
 			if isInvalidLink {
 				file.Type = "invalid_link"
 			} else {
-				err := file.detectType(true, false, readHeader, calcImgRes)
+				mediaType := strings.Split(mime.TypeByExtension(file.Extension), ";")[0]
+				known := strings.HasPrefix(mediaType, "text/") || strings.HasPrefix(mediaType, "image/") || strings.HasPrefix(mediaType, "video/") || strings.HasPrefix(mediaType, "audio/") || strings.HasSuffix(mediaType, "json") || strings.HasSuffix(mediaType, "xml") || mediaType == "application/pdf"
+				inspect := readHeader && (!lean || !known)
+				err := file.detectType(true, false, inspect, calcImgRes)
 				if err != nil {
 					return err
 				}

@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,29 +24,54 @@ import (
 )
 
 var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	encoding := r.Header.Get("X-Encoding") == "true"
+	checksum := r.URL.Query().Get("checksum")
+	metadata := r.URL.Query().Get("meta") == "true"
 	file, err := files.NewFileInfo(&files.FileOptions{
-		Fs:         d.user.Fs,
-		Path:       r.URL.Path,
-		Modify:     d.user.Perm.Modify,
-		Expand:     true,
-		ReadHeader: d.server.TypeDetectionByHeader,
-		Checker:    d,
-		Content:    d.user.Perm.Download,
+		Fs:          d.user.Fs,
+		Context:     r.Context(),
+		Path:        r.URL.Path,
+		Modify:      d.user.Perm.Modify,
+		Expand:      true,
+		ReadHeader:  d.server.TypeDetectionByHeader,
+		Checker:     d,
+		Content:     d.user.Perm.Download && !encoding && checksum == "" && !metadata,
+		LeanListing: r.URL.Query().Get("details") != "true",
 	})
 	if err != nil {
 		return errToStatus(err), err
 	}
 
-	encoding := r.Header.Get("X-Encoding")
 	if file.IsDir {
 		file.Sorting = d.user.Sorting
 		file.ApplySort()
+		if raw := r.URL.Query().Get("limit"); raw != "" {
+			limit, err := strconv.Atoi(raw)
+			if err != nil || limit < 1 || limit > 1000 {
+				return http.StatusBadRequest, fmt.Errorf("limit must be 1–1000")
+			}
+			offset := 0
+			if rawOffset := r.URL.Query().Get("offset"); rawOffset != "" {
+				offset, err = strconv.Atoi(rawOffset)
+				if err != nil || offset < 0 {
+					return http.StatusBadRequest, fmt.Errorf("invalid offset")
+				}
+			}
+			file.Total = len(file.Items)
+			file.Offset = offset
+			file.Limit = limit
+			start := min(offset, len(file.Items))
+			end := start + min(limit, len(file.Items)-start)
+			file.Items = file.Items[start:end]
+		}
 		return renderJSON(w, r, file)
-	} else if encoding == "true" {
+	} else if metadata {
+		return renderJSON(w, r, file)
+	} else if encoding {
 		if !d.user.Perm.Download {
 			return http.StatusAccepted, nil
 		}
-		if file.Type != "text" {
+		if file.Type != "text" && file.Type != "textImmutable" {
 			return renderJSON(w, r, file)
 		}
 
@@ -55,18 +81,23 @@ var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d
 		}
 		defer f.Close()
 
-		data, err := io.ReadAll(f)
-		if err != nil {
-			return http.StatusInternalServerError, err
+		stat, statErr := f.Stat()
+		if statErr != nil {
+			return errToStatus(statErr), statErr
 		}
-
+		if r.URL.Query().Get("preview") == "true" && stat.Size() > 5<<20 {
+			return http.StatusRequestEntityTooLarge, fmt.Errorf("CSV preview exceeds 5 MiB")
+		}
 		w.Header().Set("Content-Type", "application/octet-stream")
-		w.WriteHeader(http.StatusOK)
-		_, err = w.Write(data)
-		return 0, err
+		if r.URL.Query().Get("preview") == "true" {
+			http.ServeContent(w, r, file.Name, stat.ModTime(), io.NewSectionReader(f, 0, stat.Size()))
+		} else {
+			http.ServeContent(w, r, file.Name, stat.ModTime(), f)
+		}
+		return 0, nil
 	}
 
-	if checksum := r.URL.Query().Get("checksum"); checksum != "" {
+	if checksum != "" {
 		if !d.user.Perm.Download {
 			return http.StatusAccepted, nil
 		}

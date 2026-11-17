@@ -26,13 +26,15 @@ go test -tags performance_review ./http -run TestPerformancePreviewColdConcurren
 
 This explicit opt-in probe sends eight concurrent requests for one thumbnail with a cold/no-op cache and a counted fake image service. It reports resize invocations and verifies successful responses. The service deliberately waits for concurrent calls, with a bounded timeout, so this is not an image-generation latency benchmark.
 
-## Frontend selection
+## JSON serialization/compression
+
+Set `GOMAXPROCS=1` and run `go test -p 1 -tags performance_review ./http -run '^
 
 ```text
 node tools/performance/selection.mjs
 ```
 
-Node 24 executes the source TypeScript store. The script compares the existing store with no selection, the artificial worst case where every item remains selected, and an unapplied Set-based prototype that performs the complete state update. Each figure is the median of three calls. The normal file fetch flow clears selection first, so the all-selected result must not be described as the cost of every navigation.
+Node 24 executes the source TypeScript store. The script compares the current store with no selection, the artificial worst case where every item remains selected, and a Set-based reference implementation that performs the complete state update. Each figure is the median of three calls. The normal file fetch flow clears selection first, so the all-selected result must not be described as the cost of every navigation.
 
 ## Production browser workflows
 
@@ -46,4 +48,26 @@ node tools/performance/browser.mjs
 
 On Linux, build `filebrowser` instead. Chromium must already be installed through Playwright. The script runs an isolated server at `127.0.0.1:18091`, using generated files and a disposable database under ignored `build/performance-browser`. It terminates that server after the run; fixture directories are kept for inspection.
 
-The browser probe records complete listing response times and sizes, hypothetical gzip sizes of those exact bodies, retained DOM rows after scrolling, Select All time including two animation frames, CSV node/heap/long-task measurements, and oversized CSV response behavior. Browser and API times include work beyond the targeted component. Heap snapshots are process state at the sampling point, not component-exclusive allocations. Output is written to `build/performance-browser.json`.
+The browser probe records complete listing response times and sizes, actual response encodings and wire sizes alongside offline gzip sizes of the decoded bodies, retained DOM rows after scrolling, Select All time including two animation frames, CSV node/heap/long-task measurements, and oversized CSV response behavior. Browser and API times include work beyond the targeted component. Heap snapshots are process state at the sampling point, not component-exclusive allocations. Output is written to `build/performance-browser-after.json`, and screenshots to `build/performance-screenshots`. The pre-change results are preserved in the review measurements JSON. The API probe records both complete and paginated lean listings; `wireBytes` is the actual compressed response Content-Length, while `bytes` is decoded JSON. Browser checks enforce 200 file rows, 100 CSV rows, editor return to page 2, and metadata-only oversized CSV handling. -bench BenchmarkPerformanceJSONEncoding -benchmem -benchtime=150ms`. This compares identity and gzip for 200/2,000 synthetic records with a response recorder. It measures steady-state codec/serialization CPU and allocations, independently of filesystem work, network transfer and Docker resource limits.
+
+## Frontend selection
+
+```text
+node tools/performance/selection.mjs
+```
+
+Node 24 executes the source TypeScript store. The script compares the current store with no selection, the artificial worst case where every item remains selected, and a Set-based reference implementation that performs the complete state update. Each figure is the median of three calls. The normal file fetch flow clears selection first, so the all-selected result must not be described as the cost of every navigation.
+
+## Production browser workflows
+
+Build the frontend and then the embedded Go executable:
+
+```text
+pnpm --dir frontend build
+go build -o filebrowser.exe .
+node tools/performance/browser.mjs
+```
+
+On Linux, build `filebrowser` instead. Chromium must already be installed through Playwright. The script runs an isolated server at `127.0.0.1:18091`, using generated files and a disposable database under ignored `build/performance-browser`. It terminates that server after the run; fixture directories are kept for inspection.
+
+The browser probe records complete listing response times and sizes, actual response encodings and wire sizes alongside offline gzip sizes of the decoded bodies, retained DOM rows after scrolling, Select All time including two animation frames, CSV node/heap/long-task measurements, and oversized CSV response behavior. Browser and API times include work beyond the targeted component. Heap snapshots are process state at the sampling point, not component-exclusive allocations. Output is written to `build/performance-browser-after.json`, and screenshots to `build/performance-screenshots`. The pre-change results are preserved in the review measurements JSON. The API probe records both complete and paginated lean listings; `wireBytes` is the actual compressed response Content-Length, while `bytes` is decoded JSON. Browser checks enforce 200 file rows, 100 CSV rows, editor return to page 2, and metadata-only oversized CSV handling.

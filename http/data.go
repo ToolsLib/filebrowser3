@@ -47,6 +47,29 @@ func (d *data) Check(path string) bool {
 	return d.CheckRules(path)
 }
 
+// CanSkipDir only prunes inherited literal denials with no possible allow
+// exceptions. Regex rules and hide-dotfile preferences never prove inheritance.
+func (d *data) CanSkipDir(path string) bool {
+	if internalWritePath(path) {
+		return true
+	}
+	for _, rs := range [][]rules.Rule{d.settings.Rules, d.user.Rules} {
+		for _, rule := range rs {
+			if rule.Allow {
+				return false
+			}
+		}
+	}
+	for _, rs := range [][]rules.Rule{d.settings.Rules, d.user.Rules} {
+		for _, rule := range rs {
+			if !rule.Regex && !rule.Allow && rule.Matches(d.rulePath(path), d.server.CaseInsensitiveFs) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // CheckRules reports whether the global and user rules allow path. Unlike
 // Check, it ignores HideDotfiles: hiding dotfiles is a display preference, so
 // it must not stop a user from operating on a tree that contains one.

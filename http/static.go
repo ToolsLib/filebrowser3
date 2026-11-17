@@ -1,7 +1,7 @@
 package fbhttp
 
 import (
-	"compress/gzip"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,11 +9,15 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"mime"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/filebrowser/filebrowser/v2/auth"
 	"github.com/filebrowser/filebrowser/v2/settings"
@@ -21,7 +25,7 @@ import (
 	"github.com/filebrowser/filebrowser/v2/version"
 )
 
-func handleWithStaticData(w http.ResponseWriter, r *http.Request, d *data, fSys fs.FS, file, contentType string) (int, error) {
+func handleWithStaticData(w http.ResponseWriter, r *http.Request, d *data, fSys fs.FS, file, contentType string, cached ...*template.Template) (int, error) {
 	w.Header().Set("Content-Type", contentType)
 
 	auther, err := d.store.Auth.Get(d.settings.AuthMethod)
@@ -67,12 +71,7 @@ func handleWithStaticData(w http.ResponseWriter, r *http.Request, d *data, fSys 
 	}
 
 	if d.settings.AuthMethod == auth.MethodJSONAuth {
-		raw, err := d.store.Auth.Get(d.settings.AuthMethod)
-		if err != nil {
-			return http.StatusInternalServerError, err
-		}
-
-		auther := raw.(*auth.JSONAuth)
+		auther := auther.(*auth.JSONAuth)
 
 		if auther.ReCaptcha != nil {
 			data["ReCaptcha"] = auther.ReCaptcha.Key != "" && auther.ReCaptcha.Secret != ""
@@ -88,14 +87,22 @@ func handleWithStaticData(w http.ResponseWriter, r *http.Request, d *data, fSys 
 
 	data["Json"] = template.JS(strings.ReplaceAll(string(b), `'`, `\'`))
 
-	fileContents, err := fs.ReadFile(fSys, file)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return http.StatusNotFound, err
+	var index *template.Template
+	if len(cached) > 0 {
+		index = cached[0]
+	} else {
+		fileContents, readErr := fs.ReadFile(fSys, file)
+		if readErr != nil {
+			if errors.Is(readErr, os.ErrNotExist) {
+				return http.StatusNotFound, readErr
+			}
+			return http.StatusInternalServerError, readErr
 		}
-		return http.StatusInternalServerError, err
+		index, err = template.New("index").Delims("[{[", "]}]").Parse(string(fileContents))
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
 	}
-	index := template.Must(template.New("index").Delims("[{[", "]}]").Parse(string(fileContents)))
 	err = index.Execute(w, data)
 	if err != nil {
 		return http.StatusInternalServerError, err
@@ -105,6 +112,10 @@ func handleWithStaticData(w http.ResponseWriter, r *http.Request, d *data, fSys 
 }
 
 func getStaticHandlers(store *storage.Storage, server *settings.Server, assetsFs fs.FS) (index, static http.Handler) {
+	var once sync.Once
+	var parsed *template.Template
+	var parseErr error
+	immutable := regexp.MustCompile(`^(assets/[^/]+-[A-Za-z0-9_-]{8,}\.|ace/[^/]+/)`)
 	index = handle(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 		if r.Method != http.MethodGet {
 			return http.StatusNotFound, nil
@@ -112,7 +123,20 @@ func getStaticHandlers(store *storage.Storage, server *settings.Server, assetsFs
 
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		return handleWithStaticData(w, r, d, assetsFs, "public/index.html", "text/html; charset=utf-8")
+		once.Do(func() {
+			var body []byte
+			body, parseErr = fs.ReadFile(assetsFs, "public/index.html")
+			if parseErr == nil {
+				parsed, parseErr = template.New("index").Delims("[{[", "]}]").Parse(string(body))
+			}
+		})
+		if parseErr != nil {
+			if errors.Is(parseErr, os.ErrNotExist) {
+				return http.StatusNotFound, parseErr
+			}
+			return http.StatusInternalServerError, parseErr
+		}
+		return handleWithStaticData(w, r, d, assetsFs, "public/index.html", "text/html; charset=utf-8", parsed)
 	}, "", store, server)
 
 	static = handle(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
@@ -144,43 +168,44 @@ func getStaticHandlers(store *storage.Storage, server *settings.Server, assetsFs
 			}
 		}
 
-		if !strings.HasSuffix(r.URL.Path, ".js") {
-			http.FileServer(http.FS(assetsFs)).ServeHTTP(w, r)
+		if immutable.MatchString(r.URL.Path) {
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		}
+		supported := make([]string, 0, 2)
+		suffixes := map[string]string{"br": ".br", "gzip": ".gz"}
+		for _, coding := range []string{"br", "gzip"} {
+			if info, err := fs.Stat(assetsFs, r.URL.Path+suffixes[coding]); err == nil && !info.IsDir() {
+				supported = append(supported, coding)
+			}
+		}
+		w.Header().Add("Vary", "Accept-Encoding")
+		coding := chooseEncoding(r.Header.Get("Accept-Encoding"), supported...)
+		if coding == "not-acceptable" {
+			return http.StatusNotAcceptable, nil
+		}
+		if coding != "" {
+			f, err := assetsFs.Open(r.URL.Path + suffixes[coding])
+			if err != nil {
+				return errToStatus(err), err
+			}
+			defer f.Close()
+			contentType := mime.TypeByExtension(filepath.Ext(r.URL.Path))
+			if contentType != "" {
+				w.Header().Set("Content-Type", contentType)
+			}
+			w.Header().Set("Content-Encoding", coding)
+			if seekable, ok := f.(io.ReadSeeker); ok {
+				http.ServeContent(w, r, r.URL.Path, time.Time{}, seekable)
+			} else {
+				body, err := io.ReadAll(f)
+				if err != nil {
+					return http.StatusInternalServerError, err
+				}
+				http.ServeContent(w, r, r.URL.Path, time.Time{}, bytes.NewReader(body))
+			}
 			return 0, nil
 		}
-
-		f, err := assetsFs.Open(r.URL.Path + ".gz")
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				http.FileServer(http.FS(assetsFs)).ServeHTTP(w, r)
-				return 0, nil
-			}
-			return http.StatusNotFound, err
-		}
-		defer f.Close()
-
-		w.Header().Add("Vary", "Accept-Encoding")
-		acceptEncoding := r.Header.Get("Accept-Encoding")
-		if strings.Contains(acceptEncoding, "gzip") {
-			w.Header().Set("Content-Encoding", "gzip")
-			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
-
-			if _, err := io.Copy(w, f); err != nil {
-				return http.StatusInternalServerError, err
-			}
-		} else {
-			gzReader, err := gzip.NewReader(f)
-			if err != nil {
-				return http.StatusInternalServerError, err
-			}
-			defer gzReader.Close()
-
-			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
-
-			if _, err := io.Copy(w, gzReader); err != nil {
-				return http.StatusInternalServerError, err
-			}
-		}
+		http.FileServer(http.FS(assetsFs)).ServeHTTP(w, r)
 
 		return 0, nil
 	}, "/static/", store, server)

@@ -16,6 +16,9 @@ interface Resource extends ResourceBase {
   numDirs: number;
   numFiles: number;
   sorting: Sorting;
+  total?: number;
+  offset?: number;
+  limit?: number;
   hash?: string;
   token?: string;
   index: number;

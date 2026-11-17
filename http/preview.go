@@ -4,12 +4,14 @@ package fbhttp
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/spf13/afero"
 
 	"github.com/filebrowser/filebrowser/v2/files"
 	"github.com/filebrowser/filebrowser/v2/img"
@@ -95,24 +97,51 @@ func handleImagePreview(
 	}
 
 	cacheKey := previewCacheKey(file, previewSize)
+	etag := fmt.Sprintf(`"%x"`, sha256.Sum256([]byte(cacheKey)))
+	w.Header().Set("ETag", etag)
+	w.Header().Set("Cache-Control", "private, max-age=60")
+	if r.Header.Get("If-None-Match") == etag {
+		w.WriteHeader(http.StatusNotModified)
+		return 0, nil
+	}
+	if cache, ok := fileCache.(interface {
+		Open(context.Context, string) (afero.File, bool, error)
+	}); ok {
+		fd, found, openErr := cache.Open(r.Context(), cacheKey)
+		if openErr != nil && r.Context().Err() != nil {
+			return 0, r.Context().Err()
+		}
+		if found {
+			defer fd.Close()
+			http.ServeContent(w, r, file.Name, file.ModTime, fd)
+			return 0, nil
+		}
+	}
 	resizedImage, ok, err := fileCache.Load(r.Context(), cacheKey)
-	if err != nil {
-		return errToStatus(err), err
+	if err != nil && r.Context().Err() != nil {
+		return 0, r.Context().Err()
 	}
 	if !ok {
-		resizedImage, err = createPreview(imgSvc, fileCache, file, previewSize)
+		resizedImage, err = sharedPreview(r.Context(), fmt.Sprintf("%p:%p:%s", imgSvc, fileCache, cacheKey), func(ctx context.Context) ([]byte, error) {
+			if cached, found, loadErr := fileCache.Load(ctx, cacheKey); loadErr == nil && found {
+				return cached, nil
+			}
+			return createPreview(ctx, imgSvc, fileCache, file, previewSize)
+		})
 		if err != nil {
+			if errors.Is(err, errPreviewBusy) {
+				return http.StatusServiceUnavailable, err
+			}
 			return errToStatus(err), err
 		}
 	}
 
-	w.Header().Set("Cache-Control", "private")
 	http.ServeContent(w, r, file.Name, file.ModTime, bytes.NewReader(resizedImage))
 
 	return 0, nil
 }
 
-func createPreview(imgSvc ImgService, fileCache FileCache,
+func createPreview(ctx context.Context, imgSvc ImgService, fileCache FileCache,
 	file *files.FileInfo, previewSize PreviewSize) ([]byte, error) {
 	fd, err := file.Fs.Open(file.Path)
 	if err != nil {
@@ -140,20 +169,17 @@ func createPreview(imgSvc ImgService, fileCache FileCache,
 	}
 
 	buf := &bytes.Buffer{}
-	if err := imgSvc.Resize(context.Background(), fd, width, height, buf, options...); err != nil {
+	if err := imgSvc.Resize(ctx, uploadContextReader{ctx: ctx, reader: fd}, width, height, buf, options...); err != nil {
 		return nil, err
 	}
 
-	go func() {
-		cacheKey := previewCacheKey(file, previewSize)
-		if err := fileCache.Store(context.Background(), cacheKey, buf.Bytes()); err != nil {
-			fmt.Printf("failed to cache resized image: %v", err)
-		}
-	}()
+	if err := fileCache.Store(ctx, previewCacheKey(file, previewSize), buf.Bytes()); err != nil && !errors.Is(err, context.Canceled) {
+		fmt.Printf("failed to cache resized image: %v", err)
+	}
 
 	return buf.Bytes(), nil
 }
 
 func previewCacheKey(f *files.FileInfo, previewSize PreviewSize) string {
-	return fmt.Sprintf("%x%x%x", f.RealPath(), f.ModTime.Unix(), previewSize)
+	return fmt.Sprintf("v2:%s:%d:%d:%d", f.RealPath(), f.ModTime.UnixNano(), f.Size, previewSize)
 }

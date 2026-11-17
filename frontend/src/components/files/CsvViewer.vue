@@ -54,9 +54,9 @@
         </DropdownModal>
       </div>
     </div>
-    <div v-if="displayError" class="csv-error">
+    <div v-if="error || displayError" class="csv-error">
       <i class="material-icons">error</i>
-      <p>{{ displayError }}</p>
+      <p>{{ error || displayError }}</p>
     </div>
     <div v-else-if="parsed.headers.length === 0" class="csv-empty">
       <i class="material-icons">description</i>
@@ -72,7 +72,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(row, rowIndex) in parsed.rows" :key="rowIndex">
+          <tr v-for="(row, rowIndex) in visibleRows" :key="rowIndex">
             <td v-for="(cell, cellIndex) in row" :key="cellIndex">
               {{ cell }}
             </td>
@@ -80,6 +80,13 @@
         </tbody>
       </table>
       <div class="csv-footer">
+        <p v-if="truncated" class="csv-info">{{ $t("ui.previewTruncated") }}</p>
+        <Pagination
+          :page="page"
+          :total="parsed.rows.length"
+          :page-size="pageSize"
+          @change="page = $event"
+        />
         <div class="csv-info" v-if="parsed.rows.length > 100">
           <i class="material-icons">info</i>
           <span>
@@ -92,10 +99,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, watchEffect } from "vue";
-import { parse } from "csv-parse/browser/esm";
+import { computed, ref, shallowRef, watch, watchEffect } from "vue";
+import Pagination from "@/components/Pagination.vue";
 import { useI18n } from "vue-i18n";
-import { availableEncodings, decode } from "@/utils/encodings";
+import { availableEncodings } from "@/utils/encodings";
 import DropdownModal from "../DropdownModal.vue";
 
 const { t } = useI18n({});
@@ -123,7 +130,21 @@ const columnSeparator = ref([",", ";"]);
 
 const selectedEncoding = ref("utf-8");
 
-const parsed = ref<CsvData>({ headers: [], rows: [] });
+const parsed = shallowRef<CsvData>({ headers: [], rows: [] });
+const truncated = ref(false);
+const page = ref(1);
+const pageSize = computed(() =>
+  Math.max(
+    1,
+    Math.min(100, Math.floor(2000 / Math.max(1, parsed.value.headers.length)))
+  )
+);
+const visibleRows = computed(() =>
+  parsed.value.rows.slice(
+    (page.value - 1) * pageSize.value,
+    page.value * pageSize.value
+  )
+);
 
 const displayError = ref<string | null>(null);
 
@@ -131,34 +152,36 @@ const isEncodedContent = computed(() => {
   return props.content instanceof ArrayBuffer;
 });
 
-watchEffect(() => {
+watchEffect((onCleanup) => {
+  parsed.value = { headers: [], rows: [] };
+  displayError.value = null;
+  truncated.value = false;
   if (props.content !== "" && columnSeparator.value.length > 0) {
-    const content = isEncodedContent.value
-      ? decode(props.content as ArrayBuffer, selectedEncoding.value)
-      : props.content;
-    parse(
-      content as string,
-      {
-        delimiter: columnSeparator.value,
-        skip_empty_lines: true,
-        relax_column_count: true,
-      },
-      (error, output) => {
-        if (error) {
-          console.error("Failed to parse CSV:", error);
-          parsed.value = { headers: [], rows: [] };
-          displayError.value = t("files.csvLoadFailed", {
-            error: error.toString(),
-          });
-        } else {
-          parsed.value = {
-            headers: output[0],
-            rows: output.slice(1),
-          };
-          displayError.value = null;
-        }
+    page.value = 1;
+    const worker = new Worker(new URL("./csv.worker.ts", import.meta.url), {
+      type: "module",
+    });
+    worker.onmessage = ({ data }) => {
+      if (data.error)
+        displayError.value = t("files.csvLoadFailed", { error: data.error });
+      else {
+        parsed.value = { headers: data.headers, rows: data.rows };
+        truncated.value = data.truncated;
       }
-    );
+      worker.terminate();
+    };
+    worker.onerror = () => {
+      displayError.value = t("files.csvLoadFailed", {
+        error: "Preview worker failed",
+      });
+      worker.terminate();
+    };
+    worker.postMessage({
+      content: props.content,
+      encoding: selectedEncoding.value,
+      delimiter: [...columnSeparator.value],
+    });
+    onCleanup(() => worker.terminate());
   }
 });
 

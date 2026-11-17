@@ -5,7 +5,7 @@ import { files as api } from "@/api";
 import { removePrefix } from "@/api/utils";
 
 /**
- * The path used to detect conflicts against the server's recursive listing.
+ * The path used to detect conflicts against the server's path check.
  *
  * It MUST be the raw, un-encoded path relative to the destination:
  *  - `fullPath` is set for folder uploads and drag & drop (e.g. "sub/file.txt").
@@ -27,26 +27,6 @@ type ServerConflictEntry = {
   size: number;
   modified: string;
 };
-
-async function fetchConflictEntries(
-  basePath: string,
-  recursive: boolean
-): Promise<ServerConflictEntry[]> {
-  if (recursive) {
-    return await api.fetchAll(basePath);
-  }
-
-  const destination = await api.fetch(basePath);
-  return destination.items ?? [];
-}
-
-/**
- * Whether any entry lands below the destination rather than directly in it.
- * Only then does conflict detection need the whole destination tree.
- */
-function hasNestedEntries(files: UploadList): boolean {
-  return files.some((file) => conflictKey(file).includes("/"));
-}
 
 function conflictPath(entry: ServerConflictEntry): string {
   return entry.path.replace(/\\/g, "/");
@@ -96,10 +76,8 @@ function buildConflictMap(
  *  - Copy/move (true): these move flat top-level selections, so a same-named
  *    direct child is the only preflight conflict the backend will reject.
  *
- * The destination tree is only walked recursively when an entry actually lands
- * below the destination (a folder upload). Walking it for a flat upload made
- * pressing Upload wait on a full server-side walk of the whole subtree before
- * a single byte was sent, which reads as a frozen UI on a large destination.
+ * Only the submitted paths are checked in bounded batches. Failures propagate so
+ * an interrupted or forbidden preflight cannot silently skip conflict handling.
  *
  * @param files              - flat upload list to check
  * @param basePath           - server destination path (e.g. "/files/uploads/")
@@ -108,20 +86,15 @@ function buildConflictMap(
 export async function checkConflict(
   files: UploadList,
   basePath: string,
-  includeDirectories = false
+  includeDirectories = false,
+  signal?: AbortSignal
 ): Promise<ConflictingResource[]> {
   if (files.length === 0) return [];
 
-  const recursive = !includeDirectories && hasNestedEntries(files);
-
-  let serverEntries: ServerConflictEntry[];
-  try {
-    serverEntries = await fetchConflictEntries(basePath, recursive);
-  } catch {
-    // The destination doesn't exist yet, so nothing can conflict.
-    return [];
-  }
-
+  const paths = files.map(conflictKey);
+  const serverEntries = await (signal
+    ? api.checkPaths(basePath, paths, signal)
+    : api.checkPaths(basePath, paths));
   const serverMap = buildConflictMap(
     serverEntries,
     basePath,

@@ -225,7 +225,7 @@ export function isEncodableResponse(url: string): boolean {
   }
 
   for (const extension of extensions) {
-    if (url.endsWith(extension)) {
+    if (url.toLowerCase().endsWith(extension)) {
       return true;
     }
   }
@@ -255,7 +255,6 @@ export async function makeRawResource(
     mode: 0,
     url: `/files${url}`,
     rawContent: buffer,
-    content: decode(buffer, "utf-8"),
   };
 }
 

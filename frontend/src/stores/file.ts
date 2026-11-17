@@ -5,6 +5,7 @@ export const useFileStore = defineStore("file", {
   state: (): {
     req: Resource | null;
     oldReq: Resource | null;
+    browseLocation: { path: string; page: number } | null;
     reload: boolean;
     selected: number[];
     multiple: boolean;
@@ -13,6 +14,7 @@ export const useFileStore = defineStore("file", {
   } => ({
     req: null,
     oldReq: null,
+    browseLocation: null,
     reload: false,
     selected: [],
     multiple: false,
@@ -21,6 +23,7 @@ export const useFileStore = defineStore("file", {
   }),
   getters: {
     selectedCount: (state) => state.selected.length,
+    selectedSet: (state) => new Set(state.selected),
     // route: () => {
     //   const routerStore = useRouterStore();
     //   return routerStore.router.currentRoute;
@@ -39,17 +42,17 @@ export const useFileStore = defineStore("file", {
       this.multiple = !this.multiple;
     },
     updateRequest(value: Resource | null) {
-      const selectedItems = this.selected.map((i) => this.req?.items[i]);
+      const selectedUrls = new Set(
+        this.selected.map((i) => this.req?.items[i]?.url)
+      );
       this.oldReq = this.req;
       this.req = value;
 
       this.selected = [];
 
-      if (!this.req?.items) return;
+      if (!this.req?.items || selectedUrls.size === 0) return;
       this.selected = this.req.items
-        .filter((item) =>
-          selectedItems.some((rItem) => rItem?.url === item.url)
-        )
+        .filter((item) => selectedUrls.has(item.url))
         .map((item) => item.index);
     },
     removeSelected(value: any) {

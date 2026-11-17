@@ -227,9 +227,15 @@
           <div class="share__box__header" v-if="req.isDir">
             {{ t("files.files") }}
           </div>
+          <Pagination
+            :page="page"
+            :total="req.items.length"
+            :page-size="200"
+            @change="(value) => (page = value)"
+          />
           <div id="listing" class="list file-icons">
             <item
-              v-for="item in req.items.slice(0, showLimit)"
+              v-for="item in req.items.slice((page - 1) * 200, page * 200)"
               :key="item.name"
               v-bind:index="item.index"
               v-bind:name="item.name"
@@ -241,16 +247,6 @@
               readOnly
             >
             </item>
-            <div
-              v-if="req.items.length > showLimit"
-              class="item"
-              @click="showLimit += 100"
-            >
-              <div>
-                <p class="name">+ {{ req.items.length - showLimit }}</p>
-              </div>
-            </div>
-
             <div
               :class="{ active: fileStore.multiple }"
               id="multiple-selection"
@@ -293,6 +289,7 @@ import Action from "@/components/header/Action.vue";
 import Breadcrumbs from "@/components/Breadcrumbs.vue";
 import Errors from "@/views/Errors.vue";
 import QrcodeVue from "qrcode.vue";
+import Pagination from "@/components/Pagination.vue";
 import Item from "@/components/files/ListingItem.vue";
 import { useFileStore } from "@/stores/file";
 import { useAuthStore } from "@/stores/auth";
@@ -304,7 +301,7 @@ import { StatusError } from "@/api/utils";
 import { copy } from "@/utils/clipboard";
 
 const error = ref<StatusError | null>(null);
-const showLimit = ref<number>(100);
+const page = ref(1);
 const password = ref<string>("");
 const attemptedPasswordLogin = ref<boolean>(false);
 const hash = ref<string>("");
@@ -323,7 +320,7 @@ const authStore = useAuthStore();
 const layoutStore = useLayoutStore();
 
 watch(route, () => {
-  showLimit.value = 100;
+  page.value = 1;
   fetchData();
 });
 

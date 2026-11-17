@@ -20,10 +20,13 @@ services:
     environment:
       FB_USERNAME: "${FB_USERNAME:-admin}"
       FB_DISABLE_EXEC: "true"
+      FB_CACHE_DIR: /cache
+      FB_IMAGE_PROCESSORS: "1"
     volumes:
       - served-files:/srv
       - application-config:/config
       - application-database:/database
+      - preview-cache:/cache
     secrets:
       - filebrowser_password_hash
     networks:
@@ -34,6 +37,7 @@ volumes:
   served-files:
   application-config:
   application-database:
+  preview-cache:
 secrets:
   filebrowser_password_hash:
     file: ./secrets/filebrowser_password_hash

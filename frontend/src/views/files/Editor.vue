@@ -84,8 +84,8 @@ import url from "@/utils/url";
 import ace, { Ace } from "ace-builds";
 import "ace-builds/src-noconflict/ext-language_tools";
 import modelist from "ace-builds/src-noconflict/ext-modelist";
-import { themesByName } from "ace-builds/src-noconflict/ext-themelist";
-import DOMPurify from "dompurify";
+import { themesByName, version } from "virtual:ace-themes";
+import { decode as decodeContent } from "@/utils/encodings";
 
 import Breadcrumbs from "@/components/Breadcrumbs.vue";
 import Action from "@/components/header/Action.vue";
@@ -94,8 +94,6 @@ import { useAuthStore } from "@/stores/auth";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
 import { getEditorTheme } from "@/utils/theme";
-import { marked } from "marked";
-import markedKatex from "marked-katex-extension";
 import { inject, onBeforeUnmount, onMounted, ref, watchEffect } from "vue";
 import { useI18n } from "vue-i18n";
 import { onBeforeRouteUpdate, useRoute, useRouter } from "vue-router";
@@ -120,11 +118,6 @@ const previewContent = ref("");
 const isMarkdownFile =
   fileStore.req?.name.endsWith(".md") ||
   fileStore.req?.name.endsWith(".markdown");
-const katexOptions = {
-  output: "mathml" as const,
-  throwOnError: false,
-};
-marked.use(markedKatex(katexOptions));
 
 const isSelectionEmpty = ref(true);
 
@@ -159,13 +152,21 @@ onMounted(() => {
   window.addEventListener("keydown", keyEvent);
   window.addEventListener("beforeunload", handlePageChange);
 
-  const fileContent = fileStore.req?.content || "";
+  const fileContent = fileStore.req?.rawContent
+    ? decodeContent(fileStore.req.rawContent, "utf-8")
+    : fileStore.req?.content || "";
 
-  watchEffect(async () => {
+  watchEffect(async (onCleanup) => {
+    let active = true;
+    onCleanup(() => {
+      active = false;
+    });
     if (isMarkdownFile && isPreview.value) {
       const new_value = editor.value?.getValue() || "";
       try {
-        previewContent.value = DOMPurify.sanitize(await marked(new_value));
+        const { renderMarkdown } = await import("@/utils/markdown");
+        const html = await renderMarkdown(new_value);
+        if (active) previewContent.value = html;
       } catch (error) {
         console.error("Failed to convert content to HTML:", error);
         previewContent.value = "";
@@ -173,7 +174,7 @@ onMounted(() => {
     }
   });
 
-  ace.config.set("basePath", `${window.FileBrowser.StaticURL}/ace/`);
+  ace.config.set("basePath", `${window.FileBrowser.StaticURL}/ace/${version}/`);
 
   ace.config.set("useStrictCSP", true);
   if (!layoutStore.loading) {
@@ -315,7 +316,13 @@ const close = () => {
 
 const finishClose = () => {
   const uri = url.removeLastDir(route.path) + "/";
-  router.push({ path: uri });
+  router.push({
+    path: uri,
+    query:
+      fileStore.browseLocation?.path === uri
+        ? { page: fileStore.browseLocation.page }
+        : {},
+  });
 };
 
 const preview = () => {

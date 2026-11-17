@@ -163,6 +163,36 @@ async function exercise(redis) {
   const initial = await request("/api/raw/completed.txt", 200, { headers });
   assert.equal(await initial.text(), "completed file");
 
+  await request("/api/resources/preview.jpg", 200, {
+    method: "POST",
+    headers,
+    body: readFileSync(path.join(root, "img/testdata/gray-sample.jpg")),
+  });
+  const preview = await request(
+    "/api/preview/thumb/preview.jpg?inline=true",
+    200,
+    { headers },
+  );
+  assert.ok((await preview.arrayBuffer()).byteLength > 0);
+  const previewTag = preview.headers.get("ETag");
+  assert.ok(previewTag);
+  await request("/api/preview/thumb/preview.jpg?inline=true", 304, {
+    headers: { ...headers, "If-None-Match": previewTag },
+  });
+  const cachedFiles = run("docker", [
+    "exec",
+    compose("ps", "-q", "filebrowser"),
+    "find",
+    "/cache",
+    "-type",
+    "f",
+  ]);
+  assert.match(
+    cachedFiles,
+    /[a-f0-9]{40}/,
+    "preview cache is not configured or writable",
+  );
+
   async function createUpload() {
     const created = await request("/api/tus/pending.txt", 201, {
       method: "POST",
@@ -243,10 +273,19 @@ async function exercise(redis) {
       body: "hello",
     });
   }
+  await request("/api/preview/thumb/preview.jpg?inline=true", 304, {
+    headers: { ...headers, "If-None-Match": previewTag },
+  });
+  const warmPreview = await request(
+    "/api/preview/thumb/preview.jpg?inline=true",
+    200,
+    { headers },
+  );
+  assert.ok((await warmPreview.arrayBuffer()).byteLength > 0);
   const finished = await request("/api/raw/pending.txt", 200, { headers });
   assert.equal(await finished.text(), "hello");
   console.log(
-    `${mode}: passed health, login, isolation, direct/TUS uploads, durable files/sessions and ${redis ? "resumption plus Redis ACLs" : "safe restart of an unfinished upload"}`,
+    `${mode}: passed health, login, isolation, direct/TUS uploads, persistent preview cache/ETags, durable files/sessions and ${redis ? "resumption plus Redis ACLs" : "safe restart of an unfinished upload"}`,
   );
 }
 

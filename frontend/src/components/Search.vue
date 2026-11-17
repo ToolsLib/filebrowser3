@@ -1,5 +1,10 @@
 <template>
-  <div id="search" @click="open" v-bind:class="{ active, ongoing }">
+  <div
+    id="search"
+    @click="open"
+    @keydown.esc.prevent.stop="layoutStore.closeHovers()"
+    v-bind:class="{ active, ongoing }"
+  >
     <div id="input">
       <button
         v-if="active"
@@ -57,6 +62,14 @@
             </div>
           </template>
         </template>
+        <Pagination
+          v-if="results.length"
+          :page="Math.floor(cursor / 200) + 1"
+          :total="cursor + results.length + (nextCursor ? 1 : 0)"
+          :page-size="200"
+          :has-next="nextCursor > 0"
+          @change="(page) => submit(undefined, (page - 1) * 200)"
+        />
         <ul v-show="results.length > 0">
           <li v-for="(s, k) in filteredResults" :key="k">
             <router-link v-on:click="close" :to="s.url">
@@ -77,7 +90,8 @@ import { useLayoutStore } from "@/stores/layout";
 
 import url from "@/utils/url";
 import { search } from "@/api";
-import { computed, inject, onMounted, ref, watch, onUnmounted } from "vue";
+import Pagination from "@/components/Pagination.vue";
+import { computed, inject, ref, watch, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
@@ -101,7 +115,8 @@ const active = ref<boolean>(false);
 const ongoing = ref<boolean>(false);
 const results = ref<any[]>([]);
 const reload = ref<boolean>(false);
-const resultsCount = ref<number>(50);
+const cursor = ref(0);
+const nextCursor = ref(0);
 
 const $showError = inject<IToastError>("$showError")!;
 
@@ -153,30 +168,24 @@ const text = computed(() => {
     : t("search.pressToSearch");
 });
 const filteredResults = computed(() => {
-  return results.value.slice(0, resultsCount.value);
+  return results.value;
 });
 
 const closeButtonTitle = computed(() => {
   return ongoing.value ? t("buttons.stopSearch") : t("buttons.close");
 });
 
-onMounted(() => {
-  if (result.value === null) {
-    return;
+const escapeSearch = (event: KeyboardEvent) => {
+  if (active.value && event.key === "Escape") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    layoutStore.closeHovers();
   }
-  result.value.addEventListener("scroll", (event: Event) => {
-    if (
-      (event.target as HTMLElement).offsetHeight +
-        (event.target as HTMLElement).scrollTop >=
-      (event.target as HTMLElement).scrollHeight - 100
-    ) {
-      resultsCount.value += 50;
-    }
-  });
-});
-
+};
+onMounted(() => window.addEventListener("keydown", escapeSearch, true));
 onUnmounted(() => {
   abortLastSearch();
+  window.removeEventListener("keydown", escapeSearch, true);
 });
 
 const open = () => {
@@ -210,7 +219,8 @@ const init = (string: string) => {
 const reset = () => {
   abortLastSearch();
   ongoing.value = false;
-  resultsCount.value = 50;
+  cursor.value = 0;
+  nextCursor.value = 0;
   results.value = [];
 };
 
@@ -218,8 +228,9 @@ const abortLastSearch = () => {
   searchAbortController.abort();
 };
 
-const submit = async (event: Event) => {
-  event.preventDefault();
+const submit = async (event?: Event, offset = 0) => {
+  event?.preventDefault();
+  cursor.value = offset;
 
   if (prompt.value === "") {
     return;
@@ -232,13 +243,21 @@ const submit = async (event: Event) => {
 
   ongoing.value = true;
 
+  abortLastSearch();
+  const controller = new AbortController();
+  searchAbortController = controller;
   try {
-    abortLastSearch();
-    searchAbortController = new AbortController();
     results.value = [];
-    await search(path, prompt.value, searchAbortController.signal, (item) =>
-      results.value.push(item)
+    const next = await search(
+      path,
+      prompt.value,
+      controller.signal,
+      (item) => {
+        if (!controller.signal.aborted) results.value.push(item);
+      },
+      offset
     );
+    if (!controller.signal.aborted) nextCursor.value = next;
   } catch (error: any) {
     if (error instanceof StatusError && error.is_canceled) {
       return;
@@ -246,6 +265,6 @@ const submit = async (event: Event) => {
     $showError(error);
   }
 
-  ongoing.value = false;
+  if (!controller.signal.aborted) ongoing.value = false;
 };
 </script>

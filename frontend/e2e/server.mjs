@@ -2,6 +2,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { copyFile, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { crc32 } from "node:zlib";
+import UTIF from "utif";
 
 // Store-only ZIP keeps the EPUB fixture self-contained and reproducible.
 function zip(entries) {
@@ -46,6 +47,50 @@ await mkdir(parent, { recursive: true });
 const dir = await mkdtemp(path.join(parent, "server-"));
 const root = path.join(dir, "files");
 await mkdir(root);
+await writeFile(
+  path.join(root, "encoded-preview.csv"),
+  Buffer.from("name;note\ncafé;value\n", "latin1")
+);
+await writeFile(
+  path.join(root, "performance-markdown.md"),
+  '# Markdown fixture\n\n$x^2$\n\n<img src="x" onerror="window.injected=true">\n'
+);
+
+await writeFile(
+  path.join(root, "review.tiff"),
+  Buffer.from(
+    UTIF.encodeImage(
+      new Uint8Array([
+        255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255,
+      ]).buffer,
+      2,
+      2
+    )
+  )
+);
+await mkdir(path.join(root, "Large folder"));
+await Promise.all(
+  Array.from({ length: 250 }, (_, index) =>
+    writeFile(
+      path.join(
+        root,
+        "Large folder",
+        `item-${String(index).padStart(3, "0")}.txt`
+      ),
+      "Pagination fixture"
+    )
+  )
+);
+await writeFile(
+  path.join(root, "large-preview.csv"),
+  "a,b,c,d,e,f,g,h\n" +
+    Array.from({ length: 20000 }, (_, i) => `${i},a,b,c,d,e,f,g\n`).join("")
+);
+await writeFile(
+  path.join(root, "oversized-preview.csv"),
+  "a,b\n" + "x,y\n".repeat(1500000)
+);
+
 for (const name of ["Documents", "Projects", "Photos", "Empty folder"])
   await mkdir(path.join(root, name));
 await writeFile(

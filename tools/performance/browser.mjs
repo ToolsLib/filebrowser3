@@ -5,6 +5,8 @@ import path from "node:path";
 import { gzipSync } from "node:zlib";
 const parent = path.resolve("build/performance-browser");
 await mkdir(parent, { recursive: true });
+const screenshots = path.resolve("build/performance-screenshots");
+await mkdir(screenshots, { recursive: true });
 const work = await mkdtemp(path.join(parent, "run-"));
 const root = path.join(work, "files");
 await mkdir(root);
@@ -78,35 +80,55 @@ try {
   await page.locator('input[type="submit"]').click();
   await page.waitForURL("**/files/**");
   const api = [];
-  for (const count of [200, 2000]) {
-    const samples = [];
-    let bytes = 0,
-      gzipBytes = 0,
-      encoding = "";
-    for (let n = 0; n < 3; n++) {
-      const t = performance.now();
-      const response = await page.request.get(
-        base + `/api/resources/folder-${count}/`,
-        { headers: { "Accept-Encoding": "gzip, br" } },
-      );
-      const body = await response.body();
-      samples.push(performance.now() - t);
-      bytes = body.length;
-      gzipBytes = gzipSync(body).length;
-      encoding = response.headers()["content-encoding"] ?? "none";
-      if (response.status() !== 200) throw Error("Listing failed");
+  for (const count of [200, 2000])
+    for (const paginated of [false, true]) {
+      const samples = [];
+      let bytes = 0,
+        gzipBytes = 0,
+        encoding = "";
+      let lastWireBytes = 0;
+      for (let n = 0; n < 3; n++) {
+        const t = performance.now();
+        const response = await page.request.get(
+          base +
+            `/api/resources/folder-${count}/` +
+            (paginated ? "?limit=200" : ""),
+          { headers: { "Accept-Encoding": "gzip, br" } },
+        );
+        const body = await response.body();
+        samples.push(performance.now() - t);
+        bytes = body.length;
+        gzipBytes = gzipSync(body).length;
+        encoding = response.headers()["content-encoding"] ?? "none";
+        lastWireBytes = response.headers()["content-length"] || body.length;
+        if (response.status() !== 200) throw Error("Listing failed");
+      }
+      api.push({
+        items: count,
+        paginated,
+        wireBytes: Number(lastWireBytes),
+        medianMs: samples.sort((a, b) => a - b)[1],
+        bytes,
+        gzipBytes,
+        encoding,
+      });
     }
-    api.push({
-      items: count,
-      medianMs: samples.sort((a, b) => a - b)[1],
-      bytes,
-      gzipBytes,
-      encoding,
-    });
-  }
   await page.goto(base + "/files/folder-2000/");
   await page.locator("#listing .item:not(.header)").first().waitFor();
   await page.locator("#loading").waitFor({ state: "detached" });
+  if ((await page.locator("#listing .item:not(.header)").count()) > 200)
+    throw Error("Listing DOM not bounded");
+  await page.getByRole("button", { name: "Next", exact: true }).first().click();
+  await page.waitForURL("**page=2");
+  await page.locator('#listing .item[aria-label="item-00200.txt"]').waitFor();
+  await page.locator('#listing .item[aria-label="item-00200.txt"]').dblclick();
+  await page.locator("#editor").waitFor();
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.waitForURL("**page=2");
+  await page.locator('#listing .item[aria-label="item-00200.txt"]').waitFor();
+  await page.screenshot({
+    path: path.join(screenshots, "01-paginated-files.png"),
+  });
   const initialRows = await page.locator("#listing .item:not(.header)").count();
   for (let n = 0; n < 18; n++) {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
@@ -127,6 +149,7 @@ try {
   const selectedRenderedRows = await page
     .locator('#listing .item[aria-selected="true"]')
     .count();
+  if (afterScrollRows > 200) throw Error("Scrolling grew listing DOM");
   const csv = [];
   await page.addInitScript(() => {
     window.perfLongTasks = [];
@@ -144,14 +167,24 @@ try {
       .waitFor({ timeout: 60000 });
     const metrics = (await cdp.send("Performance.getMetrics")).metrics;
     const rows = await page.locator(".csv-table tbody tr").count();
+    if (rows > 100) throw Error("CSV DOM not bounded");
     csv.push({
       rows,
+      sourceRows: count,
       inputBytes: (await readFile(path.join(root, `rows-${count}.csv`))).length,
       navigationToRowsMs: performance.now() - t,
       domNodes: await page.locator("*").count(),
       heapUsedBytes: metrics.find((x) => x.name === "JSHeapUsedSize")?.value,
       longTaskMs: await page.evaluate(() => window.perfLongTasks),
     });
+    if (count === 20000) {
+      await page.locator(".csv-table-container").evaluate((el) => {
+        el.scrollTop = el.scrollHeight;
+      });
+      await page.screenshot({
+        path: path.join(screenshots, "02-paginated-csv.png"),
+      });
+    }
   }
   const result = {
     environment: {
@@ -170,11 +203,11 @@ try {
     csv,
   };
   await writeFile(
-    "build/performance-browser.json",
+    "build/performance-browser-after.json",
     JSON.stringify(result, null, 2),
   );
   const oversizedResponse = page.waitForResponse((response) =>
-    response.url().endsWith("/api/resources/too-large.csv"),
+    response.url().includes("/api/resources/too-large.csv?meta=true"),
   );
   await page.goto(base + "/files/too-large.csv");
   const response = await oversizedResponse;
@@ -188,8 +221,14 @@ try {
     viewerText: (await page.locator("main").innerText()).slice(0, 220),
     pageErrors,
   };
+  if (
+    !result.oversizedCsv.errorShown ||
+    oversizedBytes > 10000 ||
+    pageErrors.length
+  )
+    throw Error("Preview regression: " + JSON.stringify(result.oversizedCsv));
   await writeFile(
-    "build/performance-browser.json",
+    "build/performance-browser-after.json",
     JSON.stringify(result, null, 2),
   );
   console.log(JSON.stringify(result, null, 2));

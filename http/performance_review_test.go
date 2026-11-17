@@ -87,5 +87,30 @@ awaitStarted:
 	for err := range errors {
 		t.Fatal(err)
 	}
+	if svc.calls.Load() != 1 {
+		t.Fatalf("expected one shared resize, got %d", svc.calls.Load())
+	}
 	t.Logf("%d simultaneous requests for one thumbnail invoked Resize %d times", requests, svc.calls.Load())
+}
+func BenchmarkPerformanceJSONEncoding(b *testing.B) {
+	for _, count := range []int{200, 2000} {
+		payload := make([]map[string]interface{}, count)
+		for n := range payload {
+			payload[n] = map[string]interface{}{"name": fmt.Sprintf("item-%05d.txt", n), "path": fmt.Sprintf("/folder/item-%05d.txt", n), "size": 1234, "type": "text", "modified": "2026-11-17T00:00:00Z"}
+		}
+		for _, encoding := range []string{"identity", "gzip"} {
+			b.Run(fmt.Sprintf("items=%d/%s", count, encoding), func(b *testing.B) {
+				req := httptest.NewRequest("GET", "/api/resources/", nil)
+				req.Header.Set("Accept-Encoding", encoding)
+				b.ReportAllocs()
+				for b.Loop() {
+					w := httptest.NewRecorder()
+					status, err := renderJSON(w, req, payload)
+					if err != nil || status != 0 {
+						b.Fatalf("%d %v", status, err)
+					}
+				}
+			})
+		}
+	}
 }

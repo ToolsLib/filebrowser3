@@ -1,0 +1,136 @@
+{
+  "baselineCommit": "dca4446",
+  "completedDate": "2026-11-17",
+  "browser": {
+    "environment": {
+      "platform": "win32",
+      "node": "v24.22.2",
+      "browser": "159.0.8154.6"
+    },
+    "api": [
+      {
+        "items": 200,
+        "paginated": false,
+        "wireBytes": 1583,
+        "medianMs": 255.79379999999992,
+        "bytes": 38950,
+        "gzipBytes": 1520,
+        "encoding": "gzip"
+      },
+      {
+        "items": 200,
+        "paginated": true,
+        "wireBytes": 1598,
+        "medianMs": 255.69610000000011,
+        "bytes": 38974,
+        "gzipBytes": 1537,
+        "encoding": "gzip"
+      },
+      {
+        "items": 2000,
+        "paginated": false,
+        "wireBytes": 13871,
+        "medianMs": 2383.7356,
+        "bytes": 389956,
+        "gzipBytes": 13451,
+        "encoding": "gzip"
+      },
+      {
+        "items": 2000,
+        "paginated": true,
+        "wireBytes": 1687,
+        "medianMs": 2413.275999999998,
+        "bytes": 39217,
+        "gzipBytes": 1568,
+        "encoding": "gzip"
+      }
+    ],
+    "listing": {
+      "initialRows": 200,
+      "afterScrollRows": 200,
+      "totalItems": 2000,
+      "selectAllMs": 44.93130000000019,
+      "selectedRenderedRows": 200
+    },
+    "csv": [
+      {
+        "rows": 100,
+        "sourceRows": 1000,
+        "inputBytes": 17906,
+        "navigationToRowsMs": 141.19900000000052,
+        "domNodes": 1285,
+        "heapUsedBytes": 9533680,
+        "longTaskMs": []
+      },
+      {
+        "rows": 100,
+        "sourceRows": 20000,
+        "inputBytes": 388906,
+        "navigationToRowsMs": 132.6288999999997,
+        "domNodes": 1285,
+        "heapUsedBytes": 16545144,
+        "longTaskMs": []
+      }
+    ],
+    "oversizedCsv": {
+      "downloadedBytes": 186,
+      "status": 200,
+      "inputBytes": 6000004,
+      "errorShown": 1,
+      "viewerText": "home\nkeyboard_arrow_right\ntoo-large.csv\nclose\ntoo-large.csv\nmode_editedit_notedeletefile_downloadinfo\nColumn Separator\nComma (,)\nSemicolon (;)\nBoth (,) and (;)\nerror\n\nCSV file is too large for preview (>5MB). Please down",
+      "pageErrors": []
+    }
+  },
+  "selection": {
+    "node": "v24.22.2",
+    "results": [
+      {
+        "items": 100,
+        "existingAllSelectedMedianMs": 0.30979999999999563,
+        "setPrototypeAllSelectedMedianMs": 0.24309999999999832,
+        "existingNoneSelectedMedianMs": 0.02369999999999095
+      },
+      {
+        "items": 1000,
+        "existingAllSelectedMedianMs": 2.384900000000016,
+        "setPrototypeAllSelectedMedianMs": 2.5622999999999934,
+        "existingNoneSelectedMedianMs": 0.02600000000001046
+      },
+      {
+        "items": 3000,
+        "existingAllSelectedMedianMs": 7.564699999999988,
+        "setPrototypeAllSelectedMedianMs": 11.652000000000015,
+        "existingNoneSelectedMedianMs": 0.022999999999996135
+      }
+    ]
+  },
+  "go": {
+    "linuxToolchain": "go1.27.4",
+    "linuxGOMAXPROCS": 2,
+    "linuxBenchmarks": "goos: linux\r\ngoarch: amd64\r\npkg: github.com/filebrowser/filebrowser/v2/files\r\ncpu: AMD Ryzen 7 6800H with Radeon Graphics         \r\nBenchmarkPerformanceListing/text/100-2         \t    2784\t     64651 ns/op\t   93752 B/op\t     924 allocs/op\r\nBenchmarkPerformanceListing/text/1000-2        \t     236\t    749562 ns/op\t  923864 B/op\t    9030 allocs/op\r\nBenchmarkPerformanceListing/video/100-2        \t    2265\t     68851 ns/op\t   90552 B/op\t     924 allocs/op\r\nBenchmarkPerformanceListing/video/1000-2       \t     253\t    713535 ns/op\t  891864 B/op\t    9030 allocs/op\r\nBenchmarkPerformanceListing/video-subs/100-2   \t    2431\t     67869 ns/op\t   90792 B/op\t     929 allocs/op\r\nBenchmarkPerformanceListing/video-subs/1000-2  \t     238\t    747969 ns/op\t  892105 B/op\t    9035 allocs/op\r\nBenchmarkPerformanceNativeListing/files=100/resolve-checks=false-2         \t      49\t   3317390 ns/op\t  513292 B/op\t    6195 allocs/op\r\nBenchmarkPerformanceNativeListing/files=100/resolve-checks=true-2          \t      37\t   4971133 ns/op\t  874232 B/op\t   10525 allocs/op\r\nBenchmarkPerformanceNativeListing/files=1000/resolve-checks=false-2        \t       5\t  34864035 ns/op\t 5060507 B/op\t   61103 allocs/op\r\nBenchmarkPerformanceNativeListing/files=1000/resolve-checks=true-2         \t       3\t  51453803 ns/op\t 8653440 B/op\t  104135 allocs/op\r\nPASS\r\nok  \tgithub.com/filebrowser/filebrowser/v2/files\t1.798s",
+    "compressionToolchain": "go1.27.4 windows/amd64",
+    "compressionGOMAXPROCS": 1,
+    "compressionBenchmarks": "goos: windows\r\ngoarch: amd64\r\npkg: github.com/filebrowser/filebrowser/v2/http\r\ncpu: AMD Ryzen 7 6800H with Radeon Graphics         \r\nBenchmarkPerformanceJSONEncoding/items=200/identity         \t     585\t    316199 ns/op\t   89008 B/op\t    2618 allocs/op\r\nBenchmarkPerformanceJSONEncoding/items=200/gzip             \t     597\t    313833 ns/op\t   70748 B/op\t    2625 allocs/op\r\nBenchmarkPerformanceJSONEncoding/items=2000/identity        \t      70\t   3034743 ns/op\t  875632 B/op\t   26018 allocs/op\r\nBenchmarkPerformanceJSONEncoding/items=2000/gzip            \t      52\t   3317810 ns/op\t  690493 B/op\t   26028 allocs/op\r\nPASS\r\nok  \tgithub.com/filebrowser/filebrowser/v2/http\t0.962s"
+  },
+  "thumbnail": {
+    "simultaneousRequests": 8,
+    "resizeCallsBefore": 8,
+    "resizeCallsAfter": 1
+  },
+  "localDeployment": {
+    "health": 200,
+    "publicDownload": 206,
+    "publicRangeBytes": 32,
+    "assetsChecked": 4,
+    "htmlNoncesFresh": true,
+    "previewCacheConfigured": true,
+    "userDataVolumesPreserved": true
+  },
+  "validation": {
+    "windowsGo": "full suite, vet and golangci-lint passed",
+    "linuxGo": "full race suite on Go 1.26.11; final affected-package race checks passed",
+    "frontend": "type checking, lint, build, 41 unit tests passed",
+    "browser": "5 production Playwright workflows passed",
+    "docker": "app-only and optional Redis passed, including cache persistence and ETags"
+  }
+}

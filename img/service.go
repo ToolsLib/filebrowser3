@@ -30,12 +30,16 @@ const (
 
 // Service
 type Service struct {
-	sem semaphore.Semaphore
+	sem    semaphore.Semaphore
+	memory semaphore.Semaphore
 }
+
+const imageMemoryMiB = 384
 
 func New(workers int) *Service {
 	return &Service{
-		sem: semaphore.New(workers),
+		sem:    semaphore.New(workers),
+		memory: semaphore.New(imageMemoryMiB),
 	}
 }
 
@@ -154,6 +158,26 @@ func (s *Service) Resize(ctx context.Context, in io.Reader, width, height int, o
 	if err != nil {
 		return err
 	}
+	// Decode/orientation/intermediate buffers are budgeted conservatively.
+	// Inspecting the header precedes allocation of decoded pixel storage.
+	var probe bytes.Buffer
+	configReader := io.TeeReader(wrappedReader, &probe)
+	dimensions, _, err := image.DecodeConfig(configReader)
+	if err != nil {
+		return err
+	}
+	wrappedReader = io.MultiReader(&probe, wrappedReader)
+	weight := int((int64(dimensions.Width)*int64(dimensions.Height)*16 + (1 << 20) - 1) >> 20)
+	if weight < 1 {
+		weight = 1
+	}
+	if weight > imageMemoryMiB {
+		return ErrImageTooLarge
+	}
+	if err := s.memory.Acquire(ctx, weight); err != nil {
+		return err
+	}
+	defer s.memory.Release(weight)
 
 	config := resizeConfig{
 		format:     format,
@@ -179,6 +203,9 @@ func (s *Service) Resize(ctx context.Context, in io.Reader, width, height int, o
 	if err != nil {
 		return err
 	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 
 	switch config.resizeMode {
 	case ResizeModeFill:
@@ -189,6 +216,9 @@ func (s *Service) Resize(ctx context.Context, in io.Reader, width, height int, o
 		img = imaging.Fit(img, width, height, config.quality.resampleFilter())
 	}
 
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	return imaging.Encode(out, img, config.format.toImaging())
 }
 

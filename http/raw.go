@@ -1,8 +1,10 @@
 package fbhttp
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"net/http"
@@ -103,72 +105,107 @@ var rawHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) 
 	return rawDirHandler(w, r, d, file)
 })
 
-func getFiles(d *data, path, commonPath string) ([]archives.FileInfo, error) {
-	if !d.Check(path) {
-		return nil, nil
-	}
+var errArchiveLimit = errors.New("archive exceeds 100000 entries; download smaller folders separately")
 
-	info, err := d.user.Fs.Stat(path)
-	if err != nil {
-		return nil, err
-	}
-	if !info.IsDir() && !info.Mode().IsRegular() {
-		return nil, nil
-	}
+const maxArchiveEntries = 100000
 
-	var archiveFiles []archives.FileInfo
-
-	if path != commonPath {
-		nameInArchive := strings.TrimPrefix(path, commonPath)
-		nameInArchive = strings.TrimPrefix(nameInArchive, string(filepath.Separator))
-		nameInArchive = filepath.ToSlash(nameInArchive)
-		// A backslash is a legal filename character on POSIX hosts, so it can
-		// reach here verbatim. Rewriting it to the path separator "/" would
-		// manufacture a traversal sequence (e.g. "..\..\x" -> "../../x") that
-		// escapes the extraction directory on the victim's machine, while
-		// leaving it as "\" lets Windows extractors treat it as a separator.
-		// Neutralize it to an inert character instead of turning it into one.
-		nameInArchive = strings.ReplaceAll(nameInArchive, "\\", "_")
-
-		// Defense in depth: never emit an archive entry whose path escapes the
-		// archive root, regardless of how the name was produced.
-		if cleaned := gopath.Clean("/" + nameInArchive); cleaned != "/"+nameInArchive {
-			return nil, fmt.Errorf("refusing unsafe archive entry name: %q", nameInArchive)
+func archiveManifest(ctx context.Context, d *data, targets []string, commonPath string) ([]archives.FileInfo, error) {
+	result := make([]archives.FileInfo, 0)
+	seen := make(map[string]bool)
+	names := make(map[string]bool)
+	discovered := 0
+	var walk func(string) error
+	walk = func(target string) error {
+		if err := ctx.Err(); err != nil {
+			return err
 		}
-
-		archiveFiles = append(archiveFiles, archives.FileInfo{
-			FileInfo:      info,
-			NameInArchive: nameInArchive,
-			Open: func() (fs.File, error) {
-				return d.user.Fs.Open(path)
-			},
-		})
-	}
-
-	if info.IsDir() {
-		f, err := d.user.Fs.Open(path)
+		key := filepath.Clean(target)
+		if d.server.CaseInsensitiveFs {
+			key = strings.ToLower(key)
+		}
+		if seen[key] {
+			return nil
+		}
+		if len(seen) >= maxArchiveEntries {
+			return errArchiveLimit
+		}
+		seen[key] = true
+		if !d.Check(target) {
+			return nil
+		}
+		info, err := d.user.Fs.Stat(target)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		defer f.Close()
-
-		names, err := f.Readdirnames(0)
-		if err != nil {
-			return nil, err
+		if !info.IsDir() && !info.Mode().IsRegular() {
+			return nil
 		}
-
-		for _, name := range names {
-			fPath := filepath.Join(path, name)
-			subFiles, err := getFiles(d, fPath, commonPath)
-			if err != nil {
-				log.Printf("Failed to get files from %s: %v", fPath, err)
-				continue
+		if target != commonPath {
+			name := strings.TrimPrefix(target, commonPath)
+			name = strings.TrimPrefix(name, string(filepath.Separator))
+			name = filepath.ToSlash(name)
+			name = strings.ReplaceAll(name, "\\", "_")
+			if gopath.Clean("/"+name) != "/"+name {
+				return fmt.Errorf("refusing unsafe archive entry name: %q", name)
 			}
-			archiveFiles = append(archiveFiles, subFiles...)
+			if names[name] {
+				return fmt.Errorf("duplicate archive entry: %q", name)
+			}
+			names[name] = true
+			result = append(result, archives.FileInfo{FileInfo: info, NameInArchive: name, Open: func() (fs.File, error) {
+				if err := ctx.Err(); err != nil {
+					return nil, err
+				}
+				return d.user.Fs.Open(target)
+			}})
+		}
+		if !info.IsDir() {
+			return nil
+		}
+		directory, err := d.user.Fs.Open(target)
+		if err != nil {
+			return err
+		}
+		children := make([]string, 0)
+		for {
+			if err = ctx.Err(); err != nil {
+				break
+			}
+			var batch []string
+			batch, err = directory.Readdirnames(256)
+			children = append(children, batch...)
+			discovered += len(batch)
+			if discovered > maxArchiveEntries {
+				err = errArchiveLimit
+				break
+			}
+			if err != nil {
+				break
+			}
+		}
+		closeErr := directory.Close()
+		if err != nil && !errors.Is(err, io.EOF) {
+			return err
+		}
+		if closeErr != nil {
+			return closeErr
+		}
+		for _, name := range children {
+			if err := walk(filepath.Join(target, name)); err != nil {
+				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) || errors.Is(err, errArchiveLimit) {
+					return err
+				}
+				log.Printf("Failed to get archive file: %v", err)
+			}
+		}
+		return nil
+	}
+	for _, target := range targets {
+		if err := walk(target); err != nil {
+			return nil, err
 		}
 	}
-
-	return archiveFiles, nil
+	return result, nil
 }
 
 func rawDirHandler(w http.ResponseWriter, r *http.Request, d *data, file *files.FileInfo) (int, error) {
@@ -184,16 +221,13 @@ func rawDirHandler(w http.ResponseWriter, r *http.Request, d *data, file *files.
 
 	commonDir := fileutils.CommonPrefix(filepath.Separator, filenames...)
 
-	var allFiles []archives.FileInfo
-	for _, fname := range filenames {
-		archiveFiles, err := getFiles(d, fname, commonDir)
-		if err != nil {
-			log.Printf("Failed to get files from %s: %v", fname, err)
-			continue
+	allFiles, err := archiveManifest(r.Context(), d, filenames, commonDir)
+	if err != nil {
+		if errors.Is(err, errArchiveLimit) {
+			return http.StatusRequestEntityTooLarge, err
 		}
-		allFiles = append(allFiles, archiveFiles...)
+		return errToStatus(err), err
 	}
-
 	name := filepath.Base(commonDir)
 	if name == "." || name == "" || name == string(filepath.Separator) {
 		if file.Name != "" {

@@ -1,13 +1,17 @@
 package fbhttp
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
 	gopath "path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	libErrors "github.com/filebrowser/filebrowser/v2/errors"
@@ -56,7 +60,28 @@ func cleanSeparators(name, sep string) string {
 	return gopath.Clean(name)
 }
 
-func renderJSON(w http.ResponseWriter, _ *http.Request, data interface{}) (int, error) {
+// Retain only four compressors; response buffers are detached before reuse.
+var jsonGzipWriters = make(chan *gzip.Writer, 4)
+
+func jsonGzipWriter(out io.Writer) *gzip.Writer {
+	var writer *gzip.Writer
+	select {
+	case writer = <-jsonGzipWriters:
+	default:
+		writer, _ = gzip.NewWriterLevel(io.Discard, gzip.BestSpeed)
+	}
+	writer.Reset(out)
+	return writer
+}
+func releaseJSONGzipWriter(writer *gzip.Writer) {
+	writer.Reset(io.Discard)
+	select {
+	case jsonGzipWriters <- writer:
+	default:
+	}
+}
+
+func renderJSON(w http.ResponseWriter, r *http.Request, data interface{}) (int, error) {
 	marsh, err := json.Marshal(data)
 
 	if err != nil {
@@ -64,6 +89,33 @@ func renderJSON(w http.ResponseWriter, _ *http.Request, data interface{}) (int, 
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if w.Header().Get("Cache-Control") == "" {
+		w.Header().Set("Cache-Control", "private, no-store")
+	}
+	if r != nil {
+		w.Header().Add("Vary", "Accept-Encoding")
+		coding := ""
+		if len(marsh) >= 1024 || chooseEncoding(r.Header.Get("Accept-Encoding")) == "not-acceptable" {
+			coding = chooseEncoding(r.Header.Get("Accept-Encoding"), "gzip")
+		}
+		switch coding {
+		case "not-acceptable":
+			return http.StatusNotAcceptable, nil
+		case "gzip":
+			var compressed bytes.Buffer
+			writer := jsonGzipWriter(&compressed)
+			defer releaseJSONGzipWriter(writer)
+			if _, err := writer.Write(marsh); err != nil {
+				return http.StatusInternalServerError, err
+			}
+			if err := writer.Close(); err != nil {
+				return http.StatusInternalServerError, err
+			}
+			marsh = compressed.Bytes()
+			w.Header().Set("Content-Encoding", "gzip")
+		}
+	}
+	w.Header().Set("Content-Length", strconv.Itoa(len(marsh)))
 	if _, err := w.Write(marsh); err != nil {
 		// The status line is already on the wire, so there is no error status
 		// left to send: a failed write here means the client hung up. Report it

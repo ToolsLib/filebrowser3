@@ -140,7 +140,7 @@
         <div>
           <h1>{{ currentFolder }}</h1>
           <p>
-            {{ t("ui.itemCount", fileStore.req?.items.length ?? 0) }}
+            {{ t("ui.itemCount", totalItems) }}
           </p>
         </div>
         <div
@@ -158,7 +158,16 @@
             <i class="material-icons">close</i>
           </button>
         </div>
+        <button v-if="partial" class="text-button" @click="selectFolder">
+          {{ t("ui.selectFolder") }}
+        </button>
       </div>
+      <Pagination
+        :page="currentPage"
+        :total="totalItems"
+        :page-size="pageSize"
+        @change="changePage"
+      />
       <div
         v-if="
           (fileStore.req?.numDirs ?? 0) + (fileStore.req?.numFiles ?? 0) == 0
@@ -370,6 +379,12 @@
           </div>
         </div>
       </div>
+      <Pagination
+        :page="currentPage"
+        :total="totalItems"
+        :page-size="pageSize"
+        @change="changePage"
+      />
     </template>
   </div>
 </template>
@@ -391,6 +406,8 @@ import Action from "@/components/header/Action.vue";
 import Search from "@/components/Search.vue";
 import Item from "@/components/files/ListingItem.vue";
 import ContextMenu from "@/components/ContextMenu.vue";
+import Pagination from "@/components/Pagination.vue";
+import { sortResources } from "@/utils/sorting";
 import {
   computed,
   inject,
@@ -400,15 +417,41 @@ import {
   ref,
   watch,
 } from "vue";
-import { useRoute, onBeforeRouteUpdate } from "vue-router";
+import { useRoute, useRouter, onBeforeRouteUpdate } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { storeToRefs } from "pinia";
 import { removePrefix } from "@/api/utils";
 
-const showLimit = ref<number>(50);
+const localPage = ref(1);
+const pageSize = 200;
+let conflictController = new AbortController();
+const checkConflicts = async (
+  files: UploadList,
+  path: string,
+  directories = false
+) => {
+  conflictController.abort();
+  conflictController = new AbortController();
+  try {
+    return await upload.checkConflict(
+      files,
+      path,
+      directories,
+      conflictController.signal
+    );
+  } catch (error) {
+    buttons.done("upload");
+    if (!(
+      error instanceof Error &&
+      "is_canceled" in error &&
+      error.is_canceled
+    ))
+      $showError(error as Error);
+    return null;
+  }
+};
 const dragCounter = ref<number>(0);
 const width = ref<number>(window.innerWidth);
-const itemWeight = ref<number>(0);
 const isContextMenuVisible = ref<boolean>(false);
 const contextMenuPos = ref<{ x: number; y: number }>({ x: 0, y: 0 });
 
@@ -422,6 +465,44 @@ const layoutStore = useLayoutStore();
 const { req } = storeToRefs(fileStore);
 
 const route = useRoute();
+const router = useRouter();
+const totalItems = computed(
+  () => req.value?.total ?? req.value?.items.length ?? 0
+);
+const partial = computed(
+  () => !!req.value?.limit && totalItems.value > req.value.items.length
+);
+const currentPage = computed(() =>
+  partial.value
+    ? Math.floor((req.value?.offset ?? 0) / pageSize) + 1
+    : localPage.value
+);
+const displayedItems = computed(() =>
+  partial.value
+    ? (req.value?.items ?? [])
+    : (req.value?.items ?? []).slice(
+        (localPage.value - 1) * pageSize,
+        localPage.value * pageSize
+      )
+);
+const changePage = (page: number) => {
+  if (partial.value)
+    router.push({ query: { ...route.query, page: String(page) } });
+  else {
+    localPage.value = page;
+    fileStore.browseLocation = { path: req.value!.url, page };
+    window.scrollTo(0, 0);
+  }
+};
+const selectFolder = async () => {
+  try {
+    const all = await api.fetch(route.path);
+    fileStore.updateRequest(all);
+    fileStore.selected = all.items.map((item) => item.index);
+  } catch (error) {
+    $showError(error as Error);
+  }
+};
 const currentFolder = computed(() => {
   const parts = route.path.split("/").filter(Boolean);
   return parts.length > 1
@@ -430,6 +511,7 @@ const currentFolder = computed(() => {
 });
 const userCanCreate = computed(() => !!authStore.user?.perm.create);
 onBeforeRouteUpdate(() => {
+  conflictController.abort();
   hideContextMenu();
 });
 
@@ -453,30 +535,11 @@ const ascOrdered = computed(() =>
   fileStore.req ? fileStore.req.sorting.asc : false
 );
 
-const dirs = computed(() => items.value.dirs.slice(0, showLimit.value));
+const dirs = computed(() => displayedItems.value.filter((item) => item.isDir));
 
-const items = computed(() => {
-  const dirs: any[] = [];
-  const files: any[] = [];
-
-  fileStore.req?.items.forEach((item) => {
-    if (item.isDir) {
-      dirs.push(item);
-    } else {
-      files.push(item);
-    }
-  });
-
-  return { dirs, files };
-});
-
-const files = computed((): Resource[] => {
-  let _showLimit = showLimit.value - items.value.dirs.length;
-
-  if (_showLimit < 0) _showLimit = 0;
-
-  return items.value.files.slice(0, _showLimit);
-});
+const files = computed(() =>
+  displayedItems.value.filter((item) => !item.isDir)
+);
 
 const nameIcon = computed(() => {
   if (nameSorted.value && !ascOrdered.value) {
@@ -534,35 +597,19 @@ const isMobile = computed(() => {
 });
 
 watch(req, () => {
-  // Reset the show value
-  showLimit.value = 50;
-
+  localPage.value = 1;
   nextTick(() => {
-    // Ensures that the listing is displayed
-    // How much every listing item affects the window height
-    setItemWeight();
-
-    // Scroll to the item opened previously
-    if (!revealPreviousItem()) {
-      // Fill and fit the window with listing items
-      fillWindow(true);
-    }
+    const index = fileStore.selected[0];
+    if (index !== undefined)
+      document
+        .querySelector<HTMLElement>(`#listing [data-index="${index}"]`)
+        ?.scrollIntoView({ block: "center" });
   });
 });
 
 onMounted(() => {
-  // How much every listing item affects the window height
-  setItemWeight();
-
-  // Scroll to the item opened previously
-  if (!revealPreviousItem()) {
-    // Fill and fit the window with listing items
-    fillWindow(true);
-  }
-
   // Add the needed event listeners to the window and document.
   window.addEventListener("keydown", keyEvent);
-  window.addEventListener("scroll", scrollEvent);
   window.addEventListener("resize", windowsResize);
 
   if (!authStore.user?.perm.create) return;
@@ -574,9 +621,9 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  conflictController.abort();
   // Remove event listeners before destroying this page.
   window.removeEventListener("keydown", keyEvent);
-  window.removeEventListener("scroll", scrollEvent);
   window.removeEventListener("resize", windowsResize);
 
   if (authStore.user && !authStore.user?.perm.create) return;
@@ -634,16 +681,9 @@ const keyEvent = (event: KeyboardEvent) => {
       break;
     case "a":
       event.preventDefault();
-      for (const file of items.value.files) {
-        if (fileStore.selected.indexOf(file.index) === -1) {
-          fileStore.selected.push(file.index);
-        }
-      }
-      for (const dir of items.value.dirs) {
-        if (fileStore.selected.indexOf(dir.index) === -1) {
-          fileStore.selected.push(dir.index);
-        }
-      }
+      fileStore.selected = (fileStore.req?.items ?? []).map(
+        (item) => item.index
+      );
       break;
     case "s":
       event.preventDefault();
@@ -736,7 +776,8 @@ const paste = async (event: Event) => {
   }
 
   const path = route.path.endsWith("/") ? route.path : route.path + "/";
-  const conflict = await upload.checkConflict(items, path, true);
+  const conflict = await checkConflicts(items, path, true);
+  if (conflict === null) return;
 
   if (conflict.length > 0) {
     layoutStore.showHover({
@@ -768,27 +809,6 @@ const paste = async (event: Event) => {
 
   action(false, false);
 };
-
-const scrollEvent = throttle(() => {
-  const totalItems =
-    (fileStore.req?.numDirs ?? 0) + (fileStore.req?.numFiles ?? 0);
-
-  // All items are displayed
-  if (showLimit.value >= totalItems) return;
-
-  const currentPos = window.innerHeight + window.scrollY;
-
-  // Trigger at the 75% of the window height
-  const triggerPos = document.body.offsetHeight - window.innerHeight * 0.25;
-
-  if (currentPos > triggerPos) {
-    // Quantity of items needed to fill 2x of the window height
-    const showQuantity = Math.ceil((window.innerHeight * 2) / itemWeight.value);
-
-    // Increase the number of displayed items
-    showLimit.value += showQuantity;
-  }
-}, 100);
 
 const dragEnter = () => {
   dragCounter.value++;
@@ -835,19 +855,13 @@ const drop = async (event: DragEvent) => {
     el.dataset.dir === "true"
   ) {
     path = el.dataset.url || path;
-
-    try {
-      (await api.fetch(path)).items;
-    } catch (error: any) {
-      $showError(error);
-      return;
-    }
   }
 
   // Checking the destination hits the server, so show it is working rather
   // than leaving the action looking inert until the upload starts.
   buttons.loading("upload");
-  const conflict = await upload.checkConflict(files, path);
+  const conflict = await checkConflicts(files, path);
+  if (conflict === null) return;
 
   const preselect = removePrefix(path) + (files[0].fullPath || files[0].name);
 
@@ -910,7 +924,8 @@ const uploadInput = async (event: Event) => {
   // Checking the destination hits the server, so show it is working rather
   // than leaving the action looking inert until the upload starts.
   buttons.loading("upload");
-  const conflict = await upload.checkConflict(uploadFiles, path);
+  const conflict = await checkConflicts(uploadFiles, path);
+  if (conflict === null) return;
 
   if (conflict.length > 0) {
     buttons.done("upload");
@@ -971,17 +986,30 @@ const sort = async (by: string) => {
     }
   }
 
-  try {
-    if (authStore.user?.id) {
-      await users.update({ id: authStore.user?.id, sorting: { by, asc } }, [
-        "sorting",
-      ]);
+  const sorting = { by: by as Sorting["by"], asc };
+  if (!partial.value && fileStore.req) {
+    const selected = new Set(
+      fileStore.selected.map((i) => fileStore.req!.items[i].url)
+    );
+    fileStore.req.items = sortResources(fileStore.req.items, sorting);
+    fileStore.req.sorting = sorting;
+    fileStore.selected = fileStore.req.items
+      .filter((item) => selected.has(item.url))
+      .map((item) => item.index);
+    localPage.value = 1;
+    if (authStore.user?.id)
+      users
+        .update({ id: authStore.user.id, sorting }, ["sorting"])
+        .catch($showError);
+  } else {
+    try {
+      if (authStore.user?.id)
+        await users.update({ id: authStore.user.id, sorting }, ["sorting"]);
+      fileStore.reload = true;
+    } catch (error) {
+      $showError(error as Error);
     }
-  } catch (e: any) {
-    $showError(e);
   }
-
-  fileStore.reload = true;
 };
 
 const openSearch = () => {
@@ -995,15 +1023,6 @@ const toggleMultipleSelection = () => {
 
 const windowsResize = throttle(() => {
   width.value = window.innerWidth;
-
-  // Listing element is not displayed
-  if (listing.value == null) return;
-
-  // How much every listing item affects the window height
-  setItemWeight();
-
-  // Fill but not fit the window
-  fillWindow();
 }, 100);
 
 const download = () => {
@@ -1055,9 +1074,6 @@ const switchView = async () => {
   users.update(data, ["viewMode"]).catch($showError);
 
   authStore.updateUser(data);
-
-  setItemWeight();
-  fillWindow();
 };
 
 const uploadFunc = () => {
@@ -1069,57 +1085,6 @@ const uploadFunc = () => {
   } else {
     document.getElementById("upload-input")?.click();
   }
-};
-
-const setItemWeight = () => {
-  // Listing element is not displayed
-  if (listing.value === null || fileStore.req === null) return;
-
-  let itemQuantity = fileStore.req.numDirs + fileStore.req.numFiles;
-  if (itemQuantity === 0) return;
-  if (itemQuantity > showLimit.value) itemQuantity = showLimit.value;
-
-  // How much every listing item affects the window height
-  itemWeight.value = listing.value.offsetHeight / itemQuantity;
-};
-
-const fillWindow = (fit = false) => {
-  if (fileStore.req === null) return;
-
-  const totalItems = fileStore.req.numDirs + fileStore.req.numFiles;
-
-  // More items are displayed than the total
-  if (showLimit.value >= totalItems && !fit) return;
-
-  const windowHeight = window.innerHeight;
-
-  // Quantity of items needed to fill 2x of the window height
-  const showQuantity = Math.ceil(
-    (windowHeight + windowHeight * 2) / itemWeight.value
-  );
-
-  // Less items to display than current
-  if (showLimit.value > showQuantity && !fit) return;
-
-  // Set the number of displayed items
-  showLimit.value = showQuantity > totalItems ? totalItems : showQuantity;
-};
-
-const revealPreviousItem = () => {
-  if (!fileStore.req || !fileStore.oldReq) return;
-
-  const index = fileStore.selected[0];
-  if (index === undefined) return;
-
-  showLimit.value =
-    index + Math.ceil((window.innerHeight * 2) / itemWeight.value);
-
-  nextTick(() => {
-    const items = document.querySelectorAll("#listing .item");
-    items[index].scrollIntoView({ block: "center" });
-  });
-
-  return true;
 };
 
 const showContextMenu = (event: MouseEvent) => {

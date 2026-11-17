@@ -41,7 +41,7 @@ import HeaderBar from "@/components/header/HeaderBar.vue";
 import Breadcrumbs from "@/components/Breadcrumbs.vue";
 import Errors from "@/views/Errors.vue";
 import { useI18n } from "vue-i18n";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import FileListing from "@/views/files/FileListing.vue";
 import { StatusError } from "@/api/utils";
 import { name } from "../utils/constants";
@@ -55,6 +55,7 @@ const fileStore = useFileStore();
 const { reload } = storeToRefs(fileStore);
 
 const route = useRoute();
+const router = useRouter();
 
 const { t } = useI18n({});
 
@@ -71,7 +72,10 @@ const currentView = computed(() => {
     return FileListing;
   } else if (fileStore.req.extension.toLowerCase() === ".csv") {
     // CSV files use Preview for table view, unless ?edit=true
-    if (route.query.edit === "true") {
+    if (
+      route.query.edit === "true" &&
+      ["text", "textImmutable"].includes(fileStore.req.type)
+    ) {
       return Editor;
     }
     return Preview;
@@ -158,7 +162,28 @@ const fetchData = async () => {
   fetchDataController.abort();
   fetchDataController = new AbortController();
   try {
-    const res = await api.fetch(url, fetchDataController.signal);
+    const rawPage = Number(route.query.page);
+    const page =
+      Number.isSafeInteger(rawPage) && rawPage > 0
+        ? Math.min(rawPage, 1000000)
+        : 1;
+    const res = await api.fetch(url, fetchDataController.signal, {
+      limit: 200,
+      offset: (page - 1) * 200,
+      edit: route.query.edit === "true",
+    });
+    if (
+      res.isDir &&
+      (res.total ?? 0) > 0 &&
+      res.items.length === 0 &&
+      page > 1
+    ) {
+      await router.replace({
+        query: { ...route.query, page: Math.ceil(res.total! / 200) },
+      });
+      return;
+    }
+    if (res.isDir) fileStore.browseLocation = { path: res.url, page };
     fileStore.updateRequest(res);
     document.title = `${res.name || t("sidebar.myFiles")} - ${t("files.files")} - ${name}`;
     layoutStore.loading = false;

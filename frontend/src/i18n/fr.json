@@ -318,6 +318,11 @@
     "loginHint": "Vos fichiers, un espace tout simplement.",
     "shareDurationHint": "Utilisez 0 pour un lien sans date d’expiration.",
     "qrCode": "Afficher le code QR",
-    "defaultTheme": "Automatique (selon l’apparence)"
+    "defaultTheme": "Automatique (selon l’apparence)",
+    "page": "Page {page}",
+    "pagination": "Pages",
+    "pageOf": "Page {page} sur {pages}",
+    "selectFolder": "Sélectionner tout le dossier",
+    "previewTruncated": "Limite de l’aperçu atteinte. Téléchargez le fichier pour voir toutes les lignes et colonnes."
   }
 }

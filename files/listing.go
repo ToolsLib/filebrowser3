@@ -13,6 +13,9 @@ type Listing struct {
 	NumDirs  int         `json:"numDirs"`
 	NumFiles int         `json:"numFiles"`
 	Sorting  Sorting     `json:"sorting"`
+	Total    int         `json:"total,omitempty"`
+	Offset   int         `json:"offset,omitempty"`
+	Limit    int         `json:"limit,omitempty"`
 }
 
 // ApplySort applies the sort order using .Order and .Sort

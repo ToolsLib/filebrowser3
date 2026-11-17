@@ -16,7 +16,7 @@ COPY --from=assets /app/dist ./frontend/dist
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build go run ./tools/build -o /filebrowser
 
 FROM alpine:3.23.8@sha256:469c9ea410b9215eaee7976ba6c0639039b444be8e5d638f7abbada189971eb2
-RUN apk add --no-cache ca-certificates && addgroup -g 1000 app && adduser -D -u 1000 -G app app && mkdir -p /srv /database /config && chown app:app /srv /database /config
+RUN apk add --no-cache ca-certificates && addgroup -g 1000 app && adduser -D -u 1000 -G app app && mkdir -p /srv /database /config /cache && chown app:app /srv /database /config /cache
 COPY --from=backend /filebrowser /usr/local/bin/filebrowser
 COPY --chmod=0555 docker/local/filebrowser-entrypoint.sh /usr/local/bin/filebrowser-entrypoint
 USER 1000:1000

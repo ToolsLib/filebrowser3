@@ -18,8 +18,10 @@ Limits apply to API routes under the configured base URL. Static files and healt
 | WebSocket command message                                                                 | 16 KiB, initial read 30 seconds; output writes 10 seconds                                              |
 | Command lifetime/output line                                                              | 10 minutes / 256 KiB; executable commands remain trusted shell-equivalent capability                   |
 | Subtitle conversion                                                                       | 10 MiB input, 16 MiB output, two simultaneous conversions                                              |
-| Search                                                                                    | Two-minute request context deadline                                                                    |
+| Search                                                                                    | Two-minute deadline; 200 results per UI page, API maximum 1,000; cursor offset up to 1,000,000                                                                    |
 | reCAPTCHA verification                                                                    | 10-second overall timeout, request cancellation, 64 KiB response; no redirect following                |
+
+Performance boundaries also include 200 mounted file rows, a 5 MiB CSV preview body, bounded worker results, a 100,000-entry archive manifest, weighted image admission, and a bounded preview cache. [Performance behavior and limits](performance.md) documents the exact policies and how to request originals or smaller archive selections.
 
 Rate and concurrency exhaustion returns 429 with Retry-After. Known oversized request bodies return 413 before the handler; streamed over-limit writes fail while preserving the prior destination through private staging. Metadata bodies are buffered only within their cap. TUS length is checked against the upload limit before staging. Use `--maxUploadSize`, `FB_MAX_UPLOAD_SIZE`, or the server configuration to accommodate larger files; zero/negative configuration uses the default and does not disable the boundary.
 

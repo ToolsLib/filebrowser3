@@ -15,7 +15,6 @@
 </template>
 <script setup lang="ts">
 import { throttle } from "lodash-es";
-import UTIF from "utif";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 interface IProps {
@@ -55,12 +54,7 @@ const imgex = ref<HTMLImageElement | null>(null);
 const container = ref<HTMLDivElement | null>(null);
 
 onMounted(() => {
-  if (!decodeUTIF() && imgex.value !== null) {
-    imgex.value.src = props.src;
-    imgex.value.alt = decodeURIComponent(
-      props.src.split("/").pop() || "preview"
-    );
-  }
+  loadImage();
 
   props.classList.forEach((className) =>
     container.value !== null ? container.value.classList.add(className) : ""
@@ -82,6 +76,8 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  imageController?.abort();
+  if (imageObjectURL) URL.revokeObjectURL(imageObjectURL);
   window.removeEventListener("resize", onResize);
   document.removeEventListener("mouseup", onMouseUp);
 });
@@ -89,37 +85,73 @@ onBeforeUnmount(() => {
 watch(
   () => props.src,
   () => {
-    if (!decodeUTIF() && imgex.value !== null) {
-      imgex.value.src = props.src;
-      imgex.value.alt = decodeURIComponent(
-        props.src.split("/").pop() || "preview"
-      );
-    }
-
+    loadImage();
     scale.value = 1;
     setZoom();
     setCenter();
   }
 );
 
-// Modified from UTIF.replaceIMG
-const decodeUTIF = () => {
-  const sufs = ["tif", "tiff", "dng", "cr2", "nef"];
-  if (document?.location?.pathname === undefined) {
+let imageController: AbortController | undefined;
+let imageObjectURL = "";
+const loadImage = async () => {
+  imageController?.abort();
+  const controller = new AbortController();
+  imageController = controller;
+  if (imageObjectURL) {
+    URL.revokeObjectURL(imageObjectURL);
+    imageObjectURL = "";
+  }
+  if (!imgex.value) return;
+  const extension =
+    document.location.pathname.split(".").pop()?.toLowerCase() ?? "";
+  imgex.value.alt = decodeURIComponent(props.src.split("/").pop() || "preview");
+  if (!["tif", "tiff", "dng", "cr2", "nef"].includes(extension)) {
+    imgex.value.src = props.src;
     return;
   }
-  const suff =
-    document.location.pathname.split(".")?.pop()?.toLowerCase() ?? "";
-
-  if (sufs.indexOf(suff) == -1) return false;
-  const xhr = new XMLHttpRequest();
-  UTIF._xhrs.push(xhr);
-  UTIF._imgs.push(imgex.value);
-  xhr.open("GET", props.src);
-  xhr.responseType = "arraybuffer";
-  xhr.onload = UTIF._imgLoaded;
-  xhr.send();
-  return true;
+  try {
+    const [{ default: UTIF }, response] = await Promise.all([
+      import("utif"),
+      fetch(props.src, { signal: controller.signal }),
+    ]);
+    if (!response.ok) throw new Error("Image download failed");
+    const data = await response.arrayBuffer();
+    if (controller.signal.aborted) return;
+    const ifds = UTIF.decode(data);
+    const candidates = [...ifds, ...(ifds[0]?.subIFD ?? [])];
+    let page = ifds[0],
+      area = 0;
+    for (const candidate of candidates) {
+      if (candidate.t258?.length < 3) continue;
+      const size = Number(candidate.t256) * Number(candidate.t257);
+      if (size > area) {
+        area = size;
+        page = candidate;
+      }
+    }
+    const pixels = Number(page?.t256) * Number(page?.t257);
+    if (!Number.isFinite(pixels) || pixels <= 0 || pixels > 24000000)
+      throw new Error("Image is too large to preview");
+    UTIF.decodeImage(data, page, ifds);
+    const rgba = UTIF.toRGBA8(page);
+    const canvas = document.createElement("canvas");
+    canvas.width = page.width;
+    canvas.height = page.height;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    const bitmap = context.createImageData(page.width, page.height);
+    bitmap.data.set(rgba);
+    context.putImageData(bitmap, 0, 0);
+    canvas.toBlob((blob) => {
+      if (!blob || controller.signal.aborted || !imgex.value) return;
+      imageObjectURL = URL.createObjectURL(blob);
+      imgex.value.src = imageObjectURL;
+    });
+  } catch (error) {
+    if (!controller.signal.aborted)
+      console.error("Unable to preview image", error);
+  }
 };
 
 const onLoad = () => {

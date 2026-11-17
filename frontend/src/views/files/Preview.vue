@@ -326,11 +326,7 @@ const isPdf = computed(() => fileStore.req?.extension.toLowerCase() == ".pdf");
 const isEpub = computed(
   () => fileStore.req?.extension.toLowerCase() == ".epub"
 );
-const isCsv = computed(
-  () =>
-    fileStore.req?.extension.toLowerCase() == ".csv" &&
-    fileStore.req.size <= CSV_MAX_SIZE
-);
+const isCsv = computed(() => fileStore.req?.extension.toLowerCase() == ".csv");
 
 const isResizeEnabled = computed(() => resizePreview);
 
@@ -354,6 +350,18 @@ watch(route, () => {
 onMounted(async () => {
   window.addEventListener("keydown", key);
   listing.value = fileStore.oldReq?.items ?? null;
+  if (
+    fileStore.oldReq?.isDir &&
+    (fileStore.oldReq.total ?? 0) > (listing.value?.length ?? 0)
+  ) {
+    try {
+      listing.value = (
+        await api.fetch(url.removeLastDir(route.path) + "/")
+      ).items;
+    } catch (error) {
+      $showError(error instanceof Error ? error : String(error));
+    }
+  }
   updatePreview();
 });
 
@@ -507,7 +515,13 @@ const toggleNavigation = throttle(function () {
 
 const close = () => {
   const uri = url.removeLastDir(route.path) + "/";
-  router.push({ path: uri });
+  router.push({
+    path: uri,
+    query:
+      fileStore.browseLocation?.path === uri
+        ? { page: fileStore.browseLocation.page }
+        : {},
+  });
 };
 
 const download = () => window.open(downloadUrl.value);

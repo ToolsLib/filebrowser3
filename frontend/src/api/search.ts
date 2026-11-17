@@ -5,8 +5,20 @@ export default async function search(
   base: string,
   query: string,
   signal: AbortSignal,
-  callback: (item: ResourceItem) => void
+  callback: (item: ResourceItem) => void,
+  cursor = 0
 ) {
+  let nextCursor = 0;
+  const receive = (line: string) => {
+    const item = JSON.parse(line);
+    if (item.type === "page") {
+      nextCursor = item.nextCursor;
+      return;
+    }
+    item.url =
+      `/files${base}` + url.encodePath(item.path) + (item.dir ? "/" : "");
+    callback(item);
+  };
   base = removePrefix(base);
   query = encodeURIComponent(query);
 
@@ -14,7 +26,10 @@ export default async function search(
     base += "/";
   }
 
-  const res = await fetchURL(`/api/search${base}?query=${query}`, { signal });
+  const res = await fetchURL(
+    `/api/search${base}?query=${query}&limit=200&cursor=${cursor}`,
+    { signal }
+  );
   if (!res.body) {
     throw new StatusError("000 No connection", 0);
   }
@@ -38,12 +53,7 @@ export default async function search(
 
         for (const line of lines) {
           if (line) {
-            const item = JSON.parse(line) as ResourceItem;
-            item.url = `/files${base}` + url.encodePath(item.path);
-            if (item.isDir) {
-              item.url += "/";
-            }
-            callback(item);
+            receive(line);
           }
         }
         if (done) break;
@@ -54,15 +64,11 @@ export default async function search(
       const lines = text.split(/\n/);
       for (const line of lines) {
         if (line) {
-          const item = JSON.parse(line) as ResourceItem;
-          item.url = `/files${base}` + url.encodePath(item.path);
-          if (item.isDir) {
-            item.url += "/";
-          }
-          callback(item);
+          receive(line);
         }
       }
     }
+    return nextCursor;
   } catch (e) {
     // Check if the error is an intentional cancellation
     if (e instanceof Error && e.name === "AbortError") {

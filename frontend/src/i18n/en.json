@@ -318,6 +318,11 @@
     "loginHint": "Your files, one simple workspace.",
     "shareDurationHint": "Use 0 for a link that does not expire.",
     "qrCode": "Show QR code",
-    "defaultTheme": "Automatic (match appearance)"
+    "defaultTheme": "Automatic (match appearance)",
+    "page": "Page {page}",
+    "pagination": "Pages",
+    "pageOf": "Page {page} of {pages}",
+    "selectFolder": "Select entire folder",
+    "previewTruncated": "Preview limit reached. Download the original file to view all rows and columns."
   }
 }

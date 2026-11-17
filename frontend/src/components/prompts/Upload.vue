@@ -27,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+import { inject, onBeforeUnmount } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import { useLayoutStore } from "@/stores/layout";
@@ -38,6 +39,9 @@ const { t } = useI18n();
 const route = useRoute();
 
 const layoutStore = useLayoutStore();
+let conflictController = new AbortController();
+const $showError = inject<IToastError>("$showError")!;
+onBeforeUnmount(() => conflictController.abort());
 
 // TODO: this is a copy of the same function in FileListing.vue
 const uploadInput = async (event: Event) => {
@@ -64,7 +68,26 @@ const uploadInput = async (event: Event) => {
   // Checking the destination hits the server, so show it is working rather
   // than leaving the action looking inert until the upload starts.
   buttons.loading("upload");
-  const conflict = await upload.checkConflict(uploadFiles, path);
+  conflictController.abort();
+  conflictController = new AbortController();
+  let conflict: ConflictingResource[];
+  try {
+    conflict = await upload.checkConflict(
+      uploadFiles,
+      path,
+      false,
+      conflictController.signal
+    );
+  } catch (error) {
+    buttons.done("upload");
+    if (!(
+      error instanceof Error &&
+      "is_canceled" in error &&
+      error.is_canceled
+    ))
+      $showError(error as Error);
+    return;
+  }
 
   if (conflict.length > 0) {
     buttons.done("upload");

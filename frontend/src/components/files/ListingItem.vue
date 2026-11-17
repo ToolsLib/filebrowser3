@@ -19,6 +19,7 @@
     @touchmove="handleTouchMove"
     :data-dir="isDir"
     :data-url="url"
+    :data-index="index"
     :data-type="type"
     :aria-label="name"
     :aria-selected="isSelected"
@@ -96,9 +97,7 @@ const layoutStore = useLayoutStore();
 const singleClick = computed(
   () => !props.readOnly && authStore.user?.singleClick
 );
-const isSelected = computed(
-  () => fileStore.selected.indexOf(props.index) !== -1
-);
+const isSelected = computed(() => fileStore.selectedSet.has(props.index));
 const isDraggable = computed(
   () => !props.readOnly && authStore.user?.perm.rename
 );

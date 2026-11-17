@@ -141,7 +141,10 @@ test("minimal workspace: keyboard, dialogs, shares, responsive layouts and theme
   });
   await sortName.focus();
   const sorted = page.waitForResponse(
-    (r) => r.url().includes("/api/resources/") && r.status() === 200
+    (r) =>
+      r.url().includes("/api/users/") &&
+      r.request().method() === "PUT" &&
+      r.status() === 200
   );
   await page.keyboard.press("Enter");
   await sorted;

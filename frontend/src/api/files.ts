@@ -5,10 +5,30 @@ import { upload as postTus, useTus } from "./tus";
 import { createURL, fetchURL, removePrefix, StatusError } from "./utils";
 import { isEncodableResponse, makeRawResource } from "@/utils/encodings";
 
-export async function fetch(url: string, signal?: AbortSignal) {
-  const encoding = isEncodableResponse(url);
+export async function fetch(
+  url: string,
+  signal?: AbortSignal,
+  page?: { limit: number; offset: number; edit?: boolean }
+) {
+  const encoding = isEncodableResponse(url) && !page?.edit;
   url = removePrefix(url);
-  const res = await fetchURL(`/api/resources${url}`, {
+  const query = new URLSearchParams({ lean: "true" });
+  if (page) {
+    query.set("limit", String(page.limit));
+    query.set("offset", String(page.offset));
+  }
+  if (encoding) {
+    const metadataResponse = await fetchURL(`/api/resources${url}?meta=true`, {
+      signal,
+    });
+    const metadata = (await metadataResponse.json()) as Resource;
+    if (metadata.size > 5 * 1024 * 1024) {
+      metadata.url = `/files${url}`;
+      return metadata;
+    }
+    query.set("preview", "true");
+  }
+  const res = await fetchURL(`/api/resources${url}?${query}`, {
     signal,
     headers: {
       "X-Encoding": encoding ? "true" : "false",
@@ -47,6 +67,43 @@ export async function fetch(url: string, signal?: AbortSignal) {
   }
 
   return data;
+}
+
+export async function checkPaths(
+  base: string,
+  paths: string[],
+  signal?: AbortSignal
+): Promise<RecursiveEntry[]> {
+  const entries: RecursiveEntry[] = [];
+  const decodedBase = removePrefix(base)
+    .split("/")
+    .map(decodeURIComponent)
+    .join("/");
+  const encoder = new TextEncoder();
+  let batch: string[] = [],
+    bytes = encoder.encode(
+      JSON.stringify({ base: decodedBase, paths: [] })
+    ).length;
+  const overhead = bytes;
+  const send = async () => {
+    const response = await fetchURL("/api/check-paths", {
+      method: "POST",
+      body: JSON.stringify({ base: decodedBase, paths: batch }),
+      signal,
+    });
+    entries.push(...(await response.json()));
+    batch = [];
+    bytes = overhead;
+  };
+  for (const path of new Set(paths)) {
+    const cost = encoder.encode(JSON.stringify(path)).length + 1;
+    if (batch.length && (batch.length >= 1000 || bytes + cost > 512 * 1024))
+      await send();
+    batch.push(path);
+    bytes += cost;
+  }
+  if (batch.length) await send();
+  return entries;
 }
 
 export async function fetchAll(url: string): Promise<RecursiveEntry[]> {

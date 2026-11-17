@@ -6,15 +6,14 @@
   >
     <option value="">{{ $t("ui.defaultTheme") }}</option>
     <option v-for="theme in themes" :value="theme.theme" :key="theme.theme">
-      {{ theme.name }}
+      {{ theme.caption }}
     </option>
   </select>
 </template>
 
 <script setup lang="ts">
 import { type SelectHTMLAttributes } from "vue";
-import "ace-builds";
-import { themes } from "ace-builds/src-noconflict/ext-themelist";
+import { themes } from "virtual:ace-themes";
 
 defineProps<{
   aceEditorTheme: string;
