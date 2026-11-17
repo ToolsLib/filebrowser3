@@ -1,35 +1,55 @@
-> [!WARNING]
->
-> The upstream File Browser project was archived on 2026-09-01. This local development fork contains subsequent hardening; upstream releases and images do not include these changes. See the [review and fix status](docs/reviews/fix-status.md).
+# File Browser 3
 
-<p align="center">
-  <img src="./branding/banner.png" width="550"/>
-</p>
+File Browser 3 is ToolsLib's independent fork of [File Browser](https://github.com/filebrowser/filebrowser), based on upstream v2.63.23. It provides a minimal web workspace for uploading, browsing, editing, previewing and sharing files.
 
-File Browser provides a file managing interface within a specified directory and it can be used to upload, delete, preview and edit your files. It is a **create-your-own-cloud**-kind of software where you can just install it on your server, direct it to a path and access your files through a nice web interface.
+This fork includes subsequent security fixes, dependency updates, a revised Vue interface and performance improvements. Upstream File Browser binaries and images do not contain these changes. The inherited Apache 2.0 license and contributor attribution are preserved.
 
-**Background:** [Goodbye File Browser, for Real This Time](https://hacdias.com/2026/07/28/filebrowser/), July 2026.
+- Persistent, revocable login sessions and confined filesystem operations.
+- Staged direct/resumable uploads with optional Redis upload-state persistence.
+- File editing, media previews, public sharing and bounded file/CSV pages.
+- An unprivileged, read-only Docker deployment with a bounded preview cache.
 
-## Security
+## Release candidate
 
-Published advisories are listed under [security advisories](https://github.com/filebrowser/filebrowser/security/advisories),
-and local reporting instructions are in [SECURITY.md](SECURITY.md). Review the local [session protocol](docs/sessions.md), [request limits](docs/request-limits.md), and [deployment guidance](docs/deployment.md) before upgrading.
+The first candidate is **v1.0.0-rc.1**. Check [Releases](https://github.com/ToolsLib/filebrowser3/releases) for availability and [Actions](https://github.com/ToolsLib/filebrowser3/actions) for its validation status.
 
-- **Command execution, runner, and hooks.** This feature is plagued with vulnerabilities across many published advisories, and would need a full rewrite to be made safe. It is disabled by default; if you re-enable it with `--disable-exec=false`, treat the ability to run commands as equivalent to shell access on the host. Background: [#5199](https://github.com/filebrowser/filebrowser/issues/5199).
-- **Sessions.** This fork uses persistent, revocable sessions, rotating refresh credentials, an absolute lifetime and server-set HttpOnly cookies. Existing stateless clients must sign in again and migrate renewal as described in [sessions](docs/sessions.md).
+Planned public image: [toolslib/filebrowser3](https://hub.docker.com/r/toolslib/filebrowser3), with linux/amd64 and linux/arm64 variants. Candidate tags never update `latest`.
 
-The inherited command runner remains a trusted shell-equivalent capability. Keep it disabled and use a restricted deployment:
+## Try locally
 
-- **Do not expose it directly to the internet.** Put it behind a reverse proxy that terminates TLS and performs its own authentication.
-- **Keep the command runner disabled.** It is off by default, so leave it off. See [#5199](https://github.com/filebrowser/filebrowser/issues/5199) and [`docs/command-execution.md`](docs/command-execution.md).
-- **Run it unprivileged, inside a container**, with only the directory you intend to serve mounted into it.
+Once the candidate image is published, use Docker Compose and Node 24:
 
-## Documentation
+```text
+git clone https://github.com/ToolsLib/filebrowser3.git
+cd filebrowser3
+node docker/local/prepare-secrets.mjs --image toolslib/filebrowser3:1.0.0-rc.1
+docker compose -f compose.release.yaml -f compose.loopback.yaml up -d --wait
+```
 
-Documentation on how to install, configure, and build this project lives in [`docs`](docs) in this repository.
+Open http://127.0.0.1:8000 and sign in as `admin` with the generated password. Save that password; the helper stores only its hash. The explicit loopback override permits cookies on local HTTP. Omit it when deploying behind TLS.
 
-[CONTRIBUTING.md](CONTRIBUTING.md) documents how to build and develop the project, which remains useful to anyone forking it.
+To try the project before image publication, follow the [source build instructions](docs/installation.md#docker) using `compose.yaml` and the explicit `compose.loopback.yaml` override for local HTTP. For published images, use `compose.release.yaml` and pin an exact version or digest. Files, accounts, settings and shares live in persistent volumes; retain the same Compose project when upgrading.
+
+## Deployment and security
+
+Place public deployments behind a TLS reverse proxy with external authentication. Keep command execution and external symlink traversal disabled. The command runner, when explicitly enabled, is trusted shell-equivalent functionality.
+
+Read [deployment](docs/deployment.md), [session migration](docs/sessions.md), [request limits](docs/request-limits.md) and [performance limits](docs/performance.md). Redis coordinates pending uploads; it does not replicate accounts or sessions.
+
+Report vulnerabilities privately through [this repository's security advisories](https://github.com/ToolsLib/filebrowser3/security/advisories/new), following [SECURITY.md](SECURITY.md). General bugs belong in [this fork's issue tracker](https://github.com/ToolsLib/filebrowser3/issues).
+
+## Development and release information
+
+- [Build and contribute](CONTRIBUTING.md)
+- [Documentation](docs/README.md)
+- [Release process and image tags](docs/releases.md)
+- [Changelog](CHANGELOG.md)
+- [Security review and fix status](docs/reviews/fix-status.md)
+- [UI modernization](docs/reviews/2026-11-16-ui-modernization.md)
+- [Performance implementation report](docs/reviews/2026-11-17-performance-completion.md)
+
+The CLI remains `filebrowser`. This project is independent of the archived upstream project; report fork-specific issues here.
 
 ## License
 
-[Apache License 2.0](LICENSE) © File Browser Contributors
+[Apache License 2.0](LICENSE). Copyright File Browser Contributors and subsequent contributors. See [NOTICE](NOTICE) for derivation and attribution.

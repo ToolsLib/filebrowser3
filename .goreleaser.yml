@@ -1,6 +1,6 @@
 version: 2
 
-project_name: filebrowser
+project_name: filebrowser3
 
 env:
   - GO111MODULE=on
@@ -9,7 +9,8 @@ builds:
   - env:
       - CGO_ENABLED=0
     ldflags:
-      - -s -w -X github.com/filebrowser/filebrowser/v2/version.Version={{ .Version }} -X github.com/filebrowser/filebrowser/v2/version.CommitSHA={{ .ShortCommit }}
+      - -s -w -X github.com/filebrowser/filebrowser/v2/version.Version={{ .Version }} -X github.com/filebrowser/filebrowser/v2/version.CommitSHA={{ .FullCommit }}
+    flags: [-trimpath]
     main: main.go
     binary: filebrowser
     goos:
@@ -41,7 +42,14 @@ builds:
         goarch: arm
 
 archives:
-  - name_template: "{{.Os}}-{{.Arch}}{{if .Arm}}v{{.Arm}}{{end}}-{{ .ProjectName }}"
+  - name_template: "{{ .ProjectName }}_{{ .Version }}_{{.Os}}_{{.Arch}}{{if .Arm}}v{{.Arm}}{{end}}"
+    files:
+      - LICENSE
+      - NOTICE
+      - README.md
+      - docs/sessions.md
+      - docs/deployment.md
+      - docs/performance.md
     formats: ["tar.gz"]
     format_overrides:
       - goos: windows
@@ -49,3 +57,8 @@ archives:
 
 checksum:
   name_template: checksums.txt
+
+release:
+  draft: true
+  prerelease: auto
+  name_template: "File Browser 3 {{ .Version }}"

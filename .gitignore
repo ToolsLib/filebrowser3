@@ -43,3 +43,8 @@ build/
 
 default.nix
 Dockerfile.dev
+
+# Local bootstrap files must never be published
+.env
+.env.*
+!.env.example

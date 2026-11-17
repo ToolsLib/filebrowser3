@@ -1,0 +1,16 @@
+File Browser 3
+https://github.com/ToolsLib/filebrowser3
+
+This project is a modified distribution of File Browser, based on upstream
+File Browser v2.63.23, by the File Browser Contributors.
+Upstream source: https://github.com/filebrowser/filebrowser
+
+The upstream Apache License 2.0 and existing attribution notices are retained.
+File Browser 3 is an independent ToolsLib fork, not an upstream File Browser
+release. Changes include session and filesystem hardening, upload integrity,
+dependency updates, a revised frontend, performance improvements and packaging.
+The source history, CHANGELOG.md and docs/reviews document these modifications.
+
+Third-party dependencies retain their respective licenses and attribution
+notices. Dependency versions are recorded in go.mod, go.sum and
+frontend/pnpm-lock.yaml. This notice does not change those licenses.

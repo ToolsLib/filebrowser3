@@ -2,6 +2,12 @@
 
 File Browser is a single binary and can be used as standalone executable. However, it is also available as a [Docker](https://www.docker.com) image. The installation and first time setup is quite straightforward independently of which system you use.
 
+## Published File Browser 3 releases
+
+Use this fork's [GitHub Releases](https://github.com/ToolsLib/filebrowser3/releases)
+and Docker Hub `toolslib/filebrowser3`. The first candidate is `v1.0.0-rc.1`;
+[release installation](releases.md) documents prebuilt images and version tags.
+
 ## Binary
 
 Build this local fork using the [contributor build instructions](../CONTRIBUTING.md#build). The upstream package-manager/download commands below install archived upstream releases and do not include this fork's changes. They are retained as historical reference.
@@ -50,7 +56,7 @@ docker compose -f compose.yaml -f compose.redis.yaml up -d --build --wait
 
 The helper can add the Redis secret to an existing app-only secret directory without changing the admin credentials. Redis preserves pending upload state across brief backend restarts; the app-only memory cache requires unfinished uploads to restart. Completed files and login sessions persist in both setups. Redis does not provide replicated account/session storage.
 
-The former BusyBox and s6 Dockerfiles were removed. Upstream Docker Hub images do not contain this fork's changes. Use the source build and follow [deployment](deployment.md#optional-redis-upload-persistence) when switching cache backends or migrating an existing installation.
+The former BusyBox and s6 Dockerfiles were removed. Published images use the same source Dockerfile; use `compose.release.yaml` for them. Upstream Docker Hub images do not contain this fork's changes. Use the source build and follow [deployment](deployment.md#optional-redis-upload-persistence) when switching cache backends or migrating an existing installation.
 
 ## First Boot
 

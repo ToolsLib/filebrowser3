@@ -1,5 +1,22 @@
 # Changelog
 
+## File Browser 3 — 1.0.0-rc.1
+
+First independent ToolsLib release candidate, based on upstream File Browser v2.63.23. Check this fork's Releases and Actions for publication status.
+
+- Hardened filesystem confinement, authorization, sessions and request limits.
+- Safe staged uploads, resumable-upload recovery and optional Redis coordination.
+- Updated dependencies and a modernized Vue interface.
+- Bounded file/CSV pages, deferred previews, thumbnail caching and compression.
+- Restored confined single-file public downloads.
+- Source/prebuilt Compose deployments, versioned amd64/arm64 images and release checksums/attestations.
+
+Existing stateless clients must sign in again; see [session migration](docs/sessions.md). Preserve database, configuration and served-file volumes when upgrading. Command execution and external symlinks remain disabled by default.
+
+---
+
+The entries below preserve the inherited upstream changelog.
+
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
 ## [2.63.23](https://github.com/filebrowser/filebrowser/compare/v2.63.22...v2.63.23) (2026-07-27)

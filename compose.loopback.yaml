@@ -1,0 +1,5 @@
+# Explicit local HTTP preview only; omit behind a TLS reverse proxy.
+services:
+  filebrowser:
+    environment:
+      FB_INSECURE_COOKIES: "true"

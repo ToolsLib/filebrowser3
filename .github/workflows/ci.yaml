@@ -42,6 +42,17 @@ jobs:
       - run: go run ./tools/build
       - working-directory: frontend
         run: pnpm test:e2e
+  release-metadata-tests:
+    name: Release metadata and tag policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24.22.2"
+      - run: node --test tools/release/metadata.test.mjs
   lint-backend:
     name: Backend lint
     runs-on: ubuntu-latest
@@ -97,21 +108,54 @@ jobs:
           go-version: "1.27.4"
       - run: go test -race ./http -run 'Redis|Upload|Cleanup|Tus' -count=1 -timeout 120s
   test-compose:
-    name: App-only and optional Redis Compose
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    name: Compose on ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
-        with:
-          go-version: "1.27.4"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "24.22.2"
-      - run: go run ./tools/build
-      - run: node docker/local/smoke-test.mjs
+      - name: Set candidate version
+        id: metadata
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            node tools/release/metadata.mjs
+          else
+            echo "version=0.0.0-dev" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build native candidate
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Dockerfile.source
+          platforms: linux/${{ matrix.arch }}
+          load: true
+          tags: filebrowser3:compose-check
+          build-args: |
+            VERSION=${{ steps.metadata.outputs.version }}
+            VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=filebrowser3-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=filebrowser3-${{ matrix.arch }}
+      - name: Check version and both Compose setups natively
+        env:
+          FB_SMOKE_IMAGE: filebrowser3:compose-check
+          DOCKER_DEFAULT_PLATFORM: linux/${{ matrix.arch }}
+          EXPECTED_VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          docker run --rm --entrypoint /usr/local/bin/filebrowser "$FB_SMOKE_IMAGE" version | grep -F "v$EXPECTED_VERSION/$GITHUB_SHA"
+          node docker/local/smoke-test.mjs
   security-go:
     name: Go vulnerability scan
     strategy:
@@ -144,7 +188,8 @@ jobs:
           go run ./tools/build
           ./filebrowser version
   release:
-    name: Release archives
+    name: Publish tested release archives and Docker Hub image
+    timeout-minutes: 60
     needs:
       [
         frontend,
@@ -154,6 +199,7 @@ jobs:
         test-compose,
         security-go,
         build,
+        release-metadata-tests,
       ]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
@@ -179,9 +225,51 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
           pnpm build
+      - name: Validate publishing configuration and version
+        id: metadata
+        env:
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          test -n "$DOCKERHUB_USERNAME" || { echo "::error::Configure repository variable DOCKERHUB_USERNAME"; exit 1; }
+          test -n "$DOCKERHUB_TOKEN" || { echo "::error::Configure repository secret DOCKERHUB_TOKEN"; exit 1; }
+          node tools/release/metadata.mjs
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Sign in to Docker Hub
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7
         with:
           version: v2.20.2
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push release image and attestations
+        id: image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Dockerfile.source
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.metadata.outputs.candidate }}
+          build-args: |
+            VERSION=${{ steps.metadata.outputs.version }}
+            VCS_REF=${{ github.sha }}
+          labels: |
+            org.opencontainers.image.url=https://github.com/ToolsLib/filebrowser3
+          sbom: true
+          provenance: mode=max
+          cache-from: type=gha,scope=filebrowser3
+          cache-to: type=gha,mode=max,scope=filebrowser3
+      - name: Publish release and stable aliases only after validation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_SHA: ${{ github.sha }}
+          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+        run: node tools/release/finalize.mjs

@@ -1,6 +1,6 @@
-# Building File Browser
+# Building File Browser 3
 
-Upstream File Browser was archived on 2026-09-01. This checkout is a local fork with its own review and hardening work; see [fix status](docs/reviews/fix-status.md).
+File Browser 3 is the ToolsLib fork of archived upstream File Browser. Its review and hardening work are tracked in [fix status](docs/reviews/fix-status.md).
 
 ## Project Structure
 
@@ -12,7 +12,7 @@ The backend side of the application is written in [Go](https://golang.org/), whi
 We encourage you to use git to manage your fork. To clone the main repository, just run:
 
 ```bash
-git clone https://github.com/filebrowser/filebrowser
+git clone https://github.com/ToolsLib/filebrowser3
 ```
 
 We use [Taskfile](https://taskfile.dev/) to manage the different processes (building, releasing, etc) automatically.
@@ -27,7 +27,7 @@ You can fully build the project in order to produce a binary by running:
 task build
 ```
 
-Without Task, run `pnpm install --frozen-lockfile` and `pnpm build` in `frontend`, then `go run ./tools/build` in the repository root. The helper emits `filebrowser.exe` on Windows and `filebrowser` on other platforms. An exact version tag supplies release metadata; otherwise the version is `0.0.0-dev+<commit>`, with `.dirty` when appropriate. A source archive without Git reports `0.0.0-dev+unknown`. It never needs a tag or remote to build locally.
+Without Task, run `pnpm install --frozen-lockfile` and `pnpm build` in `frontend`, then `go run ./tools/build` in the repository root. The helper emits `filebrowser.exe` on Windows and `filebrowser` on other platforms. An exact version tag supplies release metadata; otherwise the version is `0.0.0-dev+<commit>`, with `.dirty` when appropriate. A source archive without Git reports `0.0.0-dev+unknown`. It never needs a tag or remote to build locally. Container/release builds can supply paired `-version` and `-commit` overrides; see [releases](docs/releases.md).
 
 Frontend/unit/browser checks are documented in [frontend maintenance](docs/frontend-maintenance.md). Backend checks are `go test ./...`, `go vet ./...`, and `golangci-lint run --timeout 5m` (v2.15.0). Linux also runs the race detector. `govulncheck` v1.9.0 and full-tree `pnpm audit` are release prerequisites. Vulnerabilities must be fixed or receive a specific, reviewed applicability decision; do not disable checks to ship an update.
 

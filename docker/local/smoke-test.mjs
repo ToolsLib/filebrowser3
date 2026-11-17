@@ -23,7 +23,10 @@ const build = path.join(root, "build");
 mkdirSync(build, { recursive: true });
 const fixture = mkdtempSync(path.join(build, "compose-smoke-"));
 const suffix = `${process.pid}-${randomBytes(4).toString("hex")}`;
-const image = `filebrowser-next:smoke-${suffix}`;
+const suppliedImage = process.env.FB_SMOKE_IMAGE;
+if (suppliedImage)
+  assert.match(suppliedImage, /^[A-Za-z0-9][A-Za-z0-9._/:@-]*$/);
+const image = suppliedImage || `filebrowser-next:smoke-${suffix}`;
 const projects = [];
 const env = { ...process.env, FB_HTTP_PORT: "0", FB_USERNAME: "compose-smoke" };
 
@@ -44,6 +47,7 @@ function prepare(args) {
   return run(process.execPath, [
     path.join(root, "docker/local/prepare-secrets.mjs"),
     ...args,
+    ...(suppliedImage ? ["--image", suppliedImage] : []),
   ]);
 }
 
@@ -84,10 +88,15 @@ async function exercise(redis) {
   }
 
   const override = path.join(directory, "fixture.yaml");
-  writeFileSync(
-    override,
-    `services:\n  filebrowser:\n    image: ${image}\nsecrets:\n  filebrowser_password_hash:\n    file: ${JSON.stringify(hashFile)}\n${redis ? `  redis_password:\n    file: ${JSON.stringify(path.join(secrets, "redis_password"))}\n` : ""}`,
-  );
+  const overrideData = {
+    services: { filebrowser: { image } },
+    secrets: { filebrowser_password_hash: { file: hashFile } },
+  };
+  if (redis)
+    overrideData.secrets.redis_password = {
+      file: path.join(secrets, "redis_password"),
+    };
+  writeFileSync(override, JSON.stringify(overrideData));
   const project = `fb-compose-smoke-${suffix}-${mode}`;
   const args = [
     "compose",
@@ -122,6 +131,27 @@ async function exercise(redis) {
     );
   }
   console.log(`${mode}: starting isolated stack`);
+  if (redis && env.DOCKER_DEFAULT_PLATFORM) {
+    const reference = config.services.redis.image;
+    const index = JSON.parse(
+      run("docker", ["buildx", "imagetools", "inspect", reference, "--raw"]),
+    );
+    const [os, architecture, variant] = env.DOCKER_DEFAULT_PLATFORM.split("/");
+    const manifest = index.manifests.find(
+      (entry) =>
+        entry.platform.os === os &&
+        entry.platform.architecture === architecture &&
+        (!variant || entry.platform.variant === variant),
+    );
+    assert.ok(manifest, "Pinned Redis index lacks the requested platform");
+    assert.match(manifest.digest, /^sha256:[a-f0-9]{64}$/);
+    // A platform-specific reference avoids classic image-store index collisions.
+    overrideData.services.redis = {
+      image: reference.split("@")[0] + "@" + manifest.digest,
+      platform: env.DOCKER_DEFAULT_PLATFORM,
+    };
+    writeFileSync(override, JSON.stringify(overrideData));
+  }
   compose("up", "-d", "--wait", "--wait-timeout", "90");
   const app = inspect(compose("ps", "-q", "filebrowser"));
   assert.equal(app.Config.User, "1000:1000");
@@ -291,30 +321,32 @@ async function exercise(redis) {
 
 let failed = false;
 try {
-  console.log(
-    "Building Dockerfile.source (build output: build/compose-smoke-build.log)",
-  );
-  const built = spawnSync(
-    "docker",
-    ["build", "-f", "Dockerfile.source", "-t", image, "."],
-    {
-      cwd: root,
-      env,
-      encoding: "utf8",
-      windowsHide: true,
-      timeout: 600_000,
-      maxBuffer: 32 << 20,
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
-  writeFileSync(
-    path.join(build, "compose-smoke-build.log"),
-    String(built.stdout || "") + String(built.stderr || ""),
-  );
-  if (built.error || built.status !== 0) {
-    throw new Error(
-      "Source image build failed; inspect build/compose-smoke-build.log",
+  if (!suppliedImage) {
+    console.log(
+      "Building Dockerfile.source (build output: build/compose-smoke-build.log)",
     );
+    const built = spawnSync(
+      "docker",
+      ["build", "-f", "Dockerfile.source", "-t", image, "."],
+      {
+        cwd: root,
+        env,
+        encoding: "utf8",
+        windowsHide: true,
+        timeout: 600_000,
+        maxBuffer: 32 << 20,
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+    writeFileSync(
+      path.join(build, "compose-smoke-build.log"),
+      String(built.stdout || "") + String(built.stderr || ""),
+    );
+    if (built.error || built.status !== 0) {
+      throw new Error(
+        "Source image build failed; inspect build/compose-smoke-build.log",
+      );
+    }
   }
   // Explicit Redis selection must fail closed if its file is unavailable.
   let missingSecretRejected = false;
@@ -345,6 +377,13 @@ try {
 } catch (error) {
   failed = true;
   console.error(error.message);
+  for (const compose of projects) {
+    try {
+      console.error(compose("logs", "--no-color", "--tail", "80"));
+    } catch {
+      console.error("Could not collect fixture container logs");
+    }
+  }
 } finally {
   let cleaned = true;
   for (const compose of projects.reverse()) {
@@ -360,7 +399,7 @@ try {
     }
   }
   try {
-    run("docker", ["image", "rm", image]);
+    if (!suppliedImage) run("docker", ["image", "rm", image]);
   } catch {
     /* Build may have failed before creating the image. */
   }

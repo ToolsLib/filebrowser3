@@ -12,6 +12,7 @@ File Browser provides a file managing interface within a specified directory and
 
 ## Contents
 
+- [Public releases and image installation](releases.md)
 - [Installation](installation.md)
 - [Customization](customization.md)
 - [Authentication](authentication.md)

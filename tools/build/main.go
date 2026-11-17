@@ -25,6 +25,8 @@ func main() {
 		defaultOutput += ".exe"
 	}
 	output := flag.String("o", defaultOutput, "output binary")
+	explicitVersion := flag.String("version", "", "explicit release version (requires -commit)")
+	explicitCommit := flag.String("commit", "", "explicit source commit (requires -version)")
 	flag.Parse()
 	commit := git("rev-parse", "--short=12", "HEAD")
 	if commit == "" {
@@ -41,6 +43,18 @@ func main() {
 		} else {
 			version += "+dirty"
 		}
+	}
+	if (*explicitVersion == "") != (*explicitCommit == "") {
+		fmt.Fprintln(os.Stderr, "-version and -commit must be provided together")
+		os.Exit(2)
+	}
+	if *explicitVersion != "" {
+		if !regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$`).MatchString(*explicitVersion) ||
+			!regexp.MustCompile(`^(?:[a-f0-9]{7,40}|unknown)$`).MatchString(*explicitCommit) {
+			fmt.Fprintln(os.Stderr, "invalid explicit version or commit")
+			os.Exit(2)
+		}
+		version, commit = *explicitVersion, *explicitCommit
 	}
 	fmt.Printf("Building File Browser %s (%s)\n", version, commit)
 	command := exec.Command("go", "build", "-trimpath", "-ldflags", "-s -w -X github.com/filebrowser/filebrowser/v2/version.Version="+version+" -X github.com/filebrowser/filebrowser/v2/version.CommitSHA="+commit, "-o", *output, ".")

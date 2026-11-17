@@ -16,10 +16,21 @@ const root = path.resolve(
 );
 const args = process.argv.slice(2);
 const withRedis = args.includes("--redis");
-const paths = args.filter((arg) => arg !== "--redis");
+const imageIndex = args.indexOf("--image");
+const image = imageIndex < 0 ? undefined : args[imageIndex + 1];
+if (
+  imageIndex >= 0 &&
+  (!image || !/^[A-Za-z0-9][A-Za-z0-9._/:@-]*$/.test(image))
+)
+  throw new Error("--image requires a valid image reference");
+const paths = args.filter(
+  (arg, index) =>
+    arg !== "--redis" &&
+    (imageIndex < 0 || (index !== imageIndex && index !== imageIndex + 1)),
+);
 if (paths.length > 1 || paths.some((arg) => arg.startsWith("-"))) {
   throw new Error(
-    "Usage: node docker/local/prepare-secrets.mjs [--redis] [directory]",
+    "Usage: node docker/local/prepare-secrets.mjs [--redis] [--image image] [directory]",
   );
 }
 const destination = path.resolve(paths[0] || path.join(root, "secrets"));
@@ -65,7 +76,23 @@ const binary = path.join(
   process.platform === "win32" ? "filebrowser.exe" : "filebrowser",
 );
 const password = randomBytes(32).toString("hex");
-const hash = execFileSync(binary, ["hash", password], {
+const command = image ? "docker" : binary;
+const commandArgs = image
+  ? [
+      "run",
+      "--rm",
+      "-i",
+      "--network",
+      "none",
+      "--entrypoint",
+      "/bin/sh",
+      image,
+      "-c",
+      'IFS= read -r password; exec /usr/local/bin/filebrowser hash "$password"',
+    ]
+  : ["hash", password];
+const hash = execFileSync(command, commandArgs, {
+  input: image ? password + "\n" : undefined,
   encoding: "utf8",
   windowsHide: true,
 }).trim();

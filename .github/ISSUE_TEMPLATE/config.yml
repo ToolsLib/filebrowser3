@@ -1,5 +1,5 @@
-blank_issues_enabled: false
+blank_issues_enabled: true
 contact_links:
-  - name: GitHub Discussions
-    url: https://github.com/filebrowser/filebrowser/discussions
-    about: Please ask questions and discuss features here.
+  - name: Private security report
+    url: https://github.com/ToolsLib/filebrowser3/security/advisories/new
+    about: Report vulnerabilities privately rather than opening a public issue.

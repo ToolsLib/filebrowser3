@@ -1,5 +1,9 @@
 # Deployment
 
+## Published images
+
+Use [release installation](releases.md) and `compose.release.yaml` for `toolslib/filebrowser3`. Its runtime restrictions and data volumes match the source Compose deployment. Use the explicit `compose.loopback.yaml` override only for local HTTP previews. The public secret helper accepts `--image` so no host Go build is needed.
+
 ## Local-source Compose deployment
 
 `Dockerfile.source` is the single Docker build definition. It builds the frontend and backend from this checkout and uses digest-pinned Node, Go and Alpine images. The default `compose.yaml` runs only the application, using the in-memory resumable-upload cache. Build the local Go binary first (`go run ./tools/build` after building frontend assets), then prepare the initial admin secret:
