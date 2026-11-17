@@ -22,7 +22,7 @@ The app runs as an unprivileged user, drops all capabilities, enables no-new-pri
 
 ### Build caching
 
-The Node build keeps the pinned Corepack/pnpm download and pnpm package store in project-scoped BuildKit caches. Install layers remain keyed by `package.json` and `pnpm-lock.yaml`; changed dependencies still resolve against the frozen lockfile. Cache mounts are local to the builder and should be shared only between trusted builds. A fresh builder still needs network access.
+The Node 26 build installs pnpm directly using the exact version and SHA-512 in `frontend/package.json`, without Corepack. npm's download cache and pnpm's package store use project-scoped BuildKit caches. Install layers remain keyed by the bootstrap, package-manager configuration, `package.json` and `pnpm-lock.yaml`; changed dependencies still resolve against the frozen lockfile. Cache mounts are local to the builder and should be shared only between trusted builds. A fresh builder still needs network access.
 
 Frontend compilation copies only its production source, public assets and build/type configuration. The backend copies frontend Go embedding code and the compiled bundle separately, so unrelated frontend files do not enter its source layer. Documentation, local agent/tooling files, test sources and fixtures are excluded from the Docker context; tests continue to run from the checkout in CI and the Compose smoke harness.
 
