@@ -195,6 +195,18 @@
     "video": "Video"
   },
   "settings": {
+    "downloadLimits": "Download speed limits",
+    "globalDownloadRate": "Default download speed per user",
+    "globalDownloadRateHelp": "Each user inherits this speed unless an administrator sets an override. Their files, archives, previews and public-share downloads share one budget. Speeds are in bytes per second; short bursts are allowed.",
+    "downloadSingleContainer": "The shared budget applies within one File Browser container. Redis coordination for multiple containers is planned; the upload Redis option does not coordinate download speeds.",
+    "userDownloadRate": "User download speed",
+    "userDownloadRateHelp": "Inherit the global default, choose a custom speed, or allow unlimited downloads. Public-share visitors also consume this user's budget. Overrides may be higher or lower than the global default.",
+    "downloadInherit": "Inherit global default",
+    "downloadCustom": "Custom speed",
+    "downloadUnlimited": "Unlimited",
+    "downloadRateValue": "Speed (for example, 10 MiB/s)",
+    "downloadRateInvalid": "Enter a positive whole number of bytes per second or a speed such as 500 KiB/s or 10 MiB/s, up to 1 TiB/s.",
+    "effectiveDownloadRate": "Effective download speed: {speed}, shared across all transfers.",
     "uploadLimits": "Upload limits",
     "globalUploadLimit": "Maximum upload size per file",
     "globalUploadLimitHelp": "Enter a size such as 100 GiB. Zero inherits the deployment limit, or 10 GiB when none is configured. Smaller user limits still apply.",

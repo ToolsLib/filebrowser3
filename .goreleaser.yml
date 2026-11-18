@@ -52,6 +52,7 @@ archives:
       - docs/performance.md
       - docs/uploads.md
       - docs/request-limits.md
+      - docs/download-limits.md
     formats: ["tar.gz"]
     format_overrides:
       - goos: windows

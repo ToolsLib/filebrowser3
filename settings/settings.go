@@ -41,6 +41,7 @@ type Settings struct {
 	DirMode               fs.FileMode         `json:"dirMode"`
 	HideDotfiles          bool                `json:"hideDotfiles"`
 	MaxUploadSize         int64               `json:"maxUploadSize"`
+	DownloadRate          int64               `json:"downloadRate"`
 }
 
 // GetRules implements rules.Provider.

@@ -76,7 +76,7 @@ func setContentDisposition(w http.ResponseWriter, r *http.Request, file *files.F
 	}
 }
 
-var rawHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+var rawHandler = withUser(withDownload(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	if !d.user.Perm.Download {
 		return http.StatusAccepted, nil
 	}
@@ -103,7 +103,7 @@ var rawHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) 
 	}
 
 	return rawDirHandler(w, r, d, file)
-})
+}))
 
 var errArchiveLimit = errors.New("archive exceeds 100000 entries; download smaller folders separately")
 
@@ -220,6 +220,11 @@ func rawDirHandler(w http.ResponseWriter, r *http.Request, d *data, file *files.
 	}
 
 	commonDir := fileutils.CommonPrefix(filepath.Separator, filenames...)
+	// A single selected file is its own common prefix. Archive entries must
+	// instead be relative to its parent, otherwise the manifest skips it.
+	if info, statErr := d.user.Fs.Stat(commonDir); statErr == nil && !info.IsDir() {
+		commonDir = filepath.Dir(commonDir)
+	}
 
 	allFiles, err := archiveManifest(r.Context(), d, filenames, commonDir)
 	if err != nil {

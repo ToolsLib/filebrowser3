@@ -1,5 +1,7 @@
 # Deployment
 
+Source versions after RC2 can configure global/per-user [download speed limits](download-limits.md). Budgets are shared within one application process only. The existing Redis upload-cache option does not coordinate download bandwidth; multi-container enforcement is deferred and requires both shared identity/session storage and a distributed budget backend.
+
 ## Published images
 
 Use [release installation](releases.md) and `compose.release.yaml` for `toolslib/filebrowser3`. Its runtime restrictions and data volumes match the source Compose deployment. Use the explicit `compose.loopback.yaml` override only for local HTTP previews. The public secret helper accepts `--image` so no host Go build is needed.

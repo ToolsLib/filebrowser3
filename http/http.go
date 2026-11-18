@@ -31,9 +31,23 @@ func NewHandler(
 
 	r := mux.NewRouter()
 	index, static := getStaticHandlers(store, server, assetsFs)
+	downloads := &downloadController{
+		budgets: make(map[uint]*downloadBudget),
+		resolve: func(id uint) (int64, error) {
+			set, err := store.Settings.Get()
+			if err != nil {
+				return 0, err
+			}
+			user, err := store.Users.Get(server.Root, server.FollowExternalSymlinks, id)
+			if err != nil {
+				return 0, err
+			}
+			return effectiveDownloadRate(set, user), nil
+		},
+	}
 
 	monkey := func(fn handleFunc, prefix string) http.Handler {
-		return handle(fn, prefix, store, server)
+		return handle(fn, prefix, store, server, downloads)
 	}
 
 	r.HandleFunc("/health", healthHandler)

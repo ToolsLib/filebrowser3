@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Fix empty archives when downloading a single selected file from a directory or public share.
+
+- Global default download speed and admin-controlled per-user inherit/custom/unlimited overrides, shared by private downloads, public shares, archives and content previews.
+- Bounded streaming enforcement, cancellation, live policy refresh and range/resume support. Multi-container Redis coordination is documented as planned work in [download limits](docs/download-limits.md).
+
 ## File Browser 3 — 1.0.0-rc.2
 
 - Configure global and per-user maximum upload sizes in Settings, including defaults for new accounts.

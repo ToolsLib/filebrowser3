@@ -20,6 +20,7 @@ type UserDefaults struct {
 	DateFormat            bool              `json:"dateFormat"`
 	AceEditorTheme        string            `json:"aceEditorTheme"`
 	MaxUploadSize         int64             `json:"maxUploadSize"`
+	DownloadRate          *int64            `json:"downloadRate"`
 }
 
 // Apply applies the default options to a user.
@@ -36,4 +37,9 @@ func (d *UserDefaults) Apply(u *users.User) {
 	u.DateFormat = d.DateFormat
 	u.AceEditorTheme = d.AceEditorTheme
 	u.MaxUploadSize = d.MaxUploadSize
+	u.DownloadRate = nil
+	if d.DownloadRate != nil {
+		rate := *d.DownloadRate
+		u.DownloadRate = &rate
+	}
 }

@@ -195,6 +195,18 @@
     "video": "Vidéo"
   },
   "settings": {
+    "downloadLimits": "Limites de débit de téléchargement",
+    "globalDownloadRate": "Débit de téléchargement par défaut pour chaque utilisateur",
+    "globalDownloadRateHelp": "Chaque utilisateur hérite de ce débit sauf si un administrateur définit une exception. Ses fichiers, archives, aperçus et téléchargements publics partagent un budget commun. Les débits sont en octets par seconde ; de courtes rafales sont autorisées.",
+    "downloadSingleContainer": "Le budget partagé s’applique dans un seul conteneur File Browser. La coordination Redis entre plusieurs conteneurs est prévue ; l’option Redis des téléversements ne coordonne pas les débits de téléchargement.",
+    "userDownloadRate": "Débit de téléchargement de l’utilisateur",
+    "userDownloadRateHelp": "Hériter de la valeur globale, choisir un débit personnalisé ou autoriser un débit illimité. Les visiteurs des partages publics utilisent aussi ce budget. Une exception peut être supérieure ou inférieure à la valeur globale.",
+    "downloadInherit": "Hériter de la valeur globale",
+    "downloadCustom": "Débit personnalisé",
+    "downloadUnlimited": "Illimité",
+    "downloadRateValue": "Débit (par exemple, 10 MiB/s)",
+    "downloadRateInvalid": "Saisissez un nombre entier positif d’octets par seconde ou un débit comme 500 KiB/s ou 10 MiB/s, au maximum 1 TiB/s.",
+    "effectiveDownloadRate": "Débit effectif : {speed}, partagé entre tous les transferts.",
     "uploadLimits": "Limites de téléversement",
     "globalUploadLimit": "Taille maximale par fichier",
     "globalUploadLimitHelp": "Saisissez une taille comme 100 GiB. Zéro reprend la limite du déploiement, ou 10 GiB si aucune n’est configurée. Les limites utilisateur inférieures s’appliquent également.",
