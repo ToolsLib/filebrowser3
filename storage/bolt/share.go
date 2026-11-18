@@ -69,6 +69,62 @@ func (s shareBackend) Save(l *share.Link) error {
 	return s.db.Save(l)
 }
 
+// Read/modify/write in one transaction: concurrent edits merge independent
+// fields, and an edit can never recreate a deleted link.
+func (s shareBackend) Update(hash string, change func(*share.Link) error) (*share.Link, error) {
+	tx, err := s.db.Begin(true)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = tx.Rollback() }()
+	var link share.Link
+	if err := tx.One("Hash", hash, &link); err != nil {
+		if errors.Is(err, storm.ErrNotFound) {
+			return nil, fberrors.ErrNotExist
+		}
+		return nil, err
+	}
+	path, owner := link.Path, link.UserID
+	if err := change(&link); err != nil {
+		return nil, err
+	}
+	if link.Hash != hash || link.Path != path || link.UserID != owner {
+		return nil, fberrors.ErrInvalidDataType
+	}
+	if err := tx.Save(&link); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return &link, nil
+}
+
+func (s shareBackend) DeleteExpired(hash string, before int64) (bool, error) {
+	tx, err := s.db.Begin(true)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = tx.Rollback() }()
+	var link share.Link
+	if err := tx.One("Hash", hash, &link); err != nil {
+		if errors.Is(err, storm.ErrNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	if link.Expire == 0 || link.Expire > before {
+		return false, nil
+	}
+	if err := tx.DeleteStruct(&link); err != nil {
+		return false, err
+	}
+	if err := tx.Commit(); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func (s shareBackend) Delete(hash string) error {
 	err := s.db.DeleteStruct(&share.Link{Hash: hash})
 	if errors.Is(err, storm.ErrNotFound) {

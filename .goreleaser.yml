@@ -53,6 +53,7 @@ archives:
       - docs/uploads.md
       - docs/request-limits.md
       - docs/download-limits.md
+      - docs/shares.md
     formats: ["tar.gz"]
     format_overrides:
       - goos: windows

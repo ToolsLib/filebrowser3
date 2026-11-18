@@ -1,4 +1,27 @@
 {
+  "shares": {
+    "description": "Gérer les liens partagés, leurs mots de passe et leur expiration.",
+    "refresh": "Actualiser",
+    "edit": "Modifier le partage",
+    "stableLink": "Les modifications conservent la même URL. Les mots de passe ne sont jamais affichés ici.",
+    "keepPassword": "Conserver le mot de passe actuel",
+    "setPassword": "Définir un nouveau mot de passe",
+    "removePassword": "Supprimer la protection par mot de passe",
+    "newPassword": "Nouveau mot de passe du partage",
+    "passwordChangeHint": "Changer le mot de passe invalide les accès précédemment déverrouillés. Les visiteurs devront saisir le nouveau mot de passe.",
+    "keepExpiration": "Conserver l’expiration actuelle",
+    "expireAfter": "Expirer après une durée",
+    "durationFromSave": "Durée à compter de l’enregistrement",
+    "count": "Liens actifs : {count}",
+    "actions": "Actions",
+    "protected": "Protégé",
+    "noPassword": "Sans mot de passe",
+    "empty": "Aucun lien partagé. Créez-en un depuis Mes fichiers.",
+    "deletedUser": "Utilisateur supprimé",
+    "updated": "Partage mis à jour. Le lien reste identique.",
+    "passwordTooLong": "Le mot de passe du partage ne doit pas dépasser 72 octets UTF-8.",
+    "passwordRequired": "Saisissez un nouveau mot de passe ou choisissez de supprimer la protection."
+  },
   "buttons": {
     "cancel": "Annuler",
     "clear": "Effacer",
@@ -308,6 +331,7 @@
     "currentPassword": "Mot de Passe Actuel"
   },
   "sidebar": {
+    "shares": "Partages",
     "diskUsed": "{used} sur {total} utilisés",
     "help": "Aide",
     "hugoNew": "Nouveau Hugo",

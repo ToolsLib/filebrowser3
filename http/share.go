@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"path/filepath"
 	"sort"
@@ -60,6 +61,7 @@ func withPermShare(fn handleFunc) handleFunc {
 }
 
 var shareListHandler = withPermShare(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	w.Header().Set("Cache-Control", "no-store")
 	var (
 		s   []*share.Link
 		err error
@@ -88,6 +90,7 @@ var shareListHandler = withPermShare(func(w http.ResponseWriter, r *http.Request
 })
 
 var shareGetsHandler = withPermShare(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	w.Header().Set("Cache-Control", "no-store")
 	var (
 		s   []*share.Link
 		err error
@@ -155,6 +158,111 @@ var shareDeleteHandler = withPermShare(func(_ http.ResponseWriter, r *http.Reque
 	return errToStatus(err), err
 })
 
+var sharePutHandler = withPermShare(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	hash := strings.Trim(r.URL.Path, "/")
+	if hash == "" || strings.Contains(hash, "/") {
+		return http.StatusBadRequest, nil
+	}
+	var body share.UpdateBody
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&body); err != nil {
+		return http.StatusBadRequest, err
+	}
+	if err := decoder.Decode(new(interface{})); err != io.EOF {
+		return http.StatusBadRequest, fmt.Errorf("expected a single JSON object")
+	}
+	if body.Password == nil && body.Expires == nil {
+		return http.StatusBadRequest, fmt.Errorf("no share changes supplied")
+	}
+	if body.Unit != "" && body.Expires == nil {
+		return http.StatusBadRequest, fmt.Errorf("duration unit requires expires")
+	}
+	if body.Expires != nil {
+		if _, err := shareExpiration(*body.Expires, body.Unit, time.Now()); err != nil {
+			return http.StatusBadRequest, err
+		}
+	}
+	link, err := d.store.Share.GetByHash(hash)
+	if err != nil {
+		return errToStatus(err), err
+	}
+	if link.UserID != d.user.ID && !d.user.Perm.Admin {
+		return http.StatusForbidden, nil
+	}
+	var passwordHash, token string
+	if body.Password != nil {
+		hashed, status, err := getSharePasswordHash(share.CreateBody{Password: *body.Password})
+		if err != nil {
+			return status, err
+		}
+		passwordHash = string(hashed)
+		if passwordHash != "" {
+			token, err = newShareAccessToken()
+			if err != nil {
+				return http.StatusInternalServerError, err
+			}
+		}
+	}
+	updated, err := d.store.Share.Update(link.Hash, func(current *share.Link) error {
+		if current.UserID != d.user.ID && !d.user.Perm.Admin {
+			return fberrors.ErrPermissionDenied
+		}
+		if body.Password != nil {
+			current.PasswordHash, current.Token = passwordHash, token
+		}
+		if body.Expires != nil {
+			var err error
+			current.Expire, err = shareExpiration(*body.Expires, body.Unit, time.Now())
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return errToStatus(err), err
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	return renderJSON(w, r, toShareResponse(updated))
+})
+
+func shareExpiration(expires, unit string, now time.Time) (int64, error) {
+	if expires == "" {
+		return 0, nil
+	}
+	num, err := strconv.ParseUint(expires, 10, 64)
+	if err != nil || num == 0 {
+		return 0, fmt.Errorf("share duration must be a positive whole number; use an empty expires value for a permanent link")
+	}
+	multiplier := uint64(3600)
+	switch unit {
+	case "seconds":
+		multiplier = 1
+	case "minutes":
+		multiplier = 60
+	case "hours", "":
+	case "days":
+		multiplier = 86400
+	default:
+		return 0, fmt.Errorf("invalid share duration unit")
+	}
+	const maxShareExpiry int64 = 253402300799 // End of year 9999, representable in clients.
+	remaining := maxShareExpiry - now.Unix()
+	if remaining <= 0 || num > uint64(remaining)/multiplier {
+		return 0, fmt.Errorf("share duration is too large")
+	}
+	return now.Unix() + int64(num*multiplier), nil
+}
+
+func newShareAccessToken() (string, error) {
+	buffer := make([]byte, 96)
+	if _, err := rand.Read(buffer); err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(buffer), nil
+}
+
 var sharePostHandler = withPermShare(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	// Only allow sharing paths that currently exist. Otherwise a share could be
 	// created for a non-existent path and would silently start exposing
@@ -184,27 +292,9 @@ var sharePostHandler = withPermShare(func(w http.ResponseWriter, r *http.Request
 
 	str := base64.URLEncoding.EncodeToString(bytes)
 
-	var expire int64 = 0
-
-	if body.Expires != "" {
-		num, err := strconv.Atoi(body.Expires)
-		if err != nil {
-			return http.StatusInternalServerError, err
-		}
-
-		var add time.Duration
-		switch body.Unit {
-		case "seconds":
-			add = time.Second * time.Duration(num)
-		case "minutes":
-			add = time.Minute * time.Duration(num)
-		case "days":
-			add = time.Hour * 24 * time.Duration(num)
-		default:
-			add = time.Hour * time.Duration(num)
-		}
-
-		expire = time.Now().Add(add).Unix()
+	expire, err := shareExpiration(body.Expires, body.Unit, time.Now())
+	if err != nil {
+		return http.StatusBadRequest, err
 	}
 
 	hash, status, err := getSharePasswordHash(body)
@@ -214,11 +304,10 @@ var sharePostHandler = withPermShare(func(w http.ResponseWriter, r *http.Request
 
 	var token string
 	if len(hash) > 0 {
-		tokenBuffer := make([]byte, 96)
-		if _, err := rand.Read(tokenBuffer); err != nil {
+		token, err = newShareAccessToken()
+		if err != nil {
 			return http.StatusInternalServerError, err
 		}
-		token = base64.URLEncoding.EncodeToString(tokenBuffer)
 	}
 
 	s = &share.Link{
@@ -240,6 +329,9 @@ var sharePostHandler = withPermShare(func(w http.ResponseWriter, r *http.Request
 func getSharePasswordHash(body share.CreateBody) (data []byte, statuscode int, err error) {
 	if body.Password == "" {
 		return nil, 0, nil
+	}
+	if len(body.Password) > 72 {
+		return nil, http.StatusBadRequest, fmt.Errorf("share password must be at most 72 UTF-8 bytes")
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)

@@ -6,6 +6,14 @@ type CreateBody struct {
 	Unit     string `json:"unit"`
 }
 
+// Omitted fields preserve their values. An empty password removes protection;
+// an empty expires value makes the link permanent. Positive durations start now.
+type UpdateBody struct {
+	Password *string `json:"password"`
+	Expires  *string `json:"expires"`
+	Unit     string  `json:"unit"`
+}
+
 // Link is the information needed to build a shareable link.
 type Link struct {
 	Hash         string `json:"hash" storm:"id,index"`
