@@ -1,4 +1,27 @@
 {
+  "shares": {
+    "description": "Manage shared links, passwords and expiration.",
+    "refresh": "Refresh",
+    "edit": "Edit share",
+    "stableLink": "Changes keep the same share URL. Passwords are never shown here.",
+    "keepPassword": "Leave password unchanged",
+    "setPassword": "Set a new password",
+    "removePassword": "Remove password protection",
+    "newPassword": "New share password",
+    "passwordChangeHint": "Changing the password invalidates previously unlocked access. Visitors will need the new password.",
+    "keepExpiration": "Keep current expiration",
+    "expireAfter": "Expire after a duration",
+    "durationFromSave": "Duration starting when saved",
+    "count": "Active links: {count}",
+    "actions": "Actions",
+    "protected": "Protected",
+    "noPassword": "No password",
+    "empty": "No shared links yet. Create one from My files.",
+    "deletedUser": "Deleted user",
+    "updated": "Share updated. The link is unchanged.",
+    "passwordTooLong": "Share passwords must be at most 72 UTF-8 bytes.",
+    "passwordRequired": "Enter a new password or choose to remove password protection."
+  },
   "buttons": {
     "cancel": "Cancel",
     "clear": "Clear",
@@ -308,6 +331,7 @@
     "currentPassword": "Your Current Password"
   },
   "sidebar": {
+    "shares": "Shares",
     "diskUsed": "{used} of {total} used",
     "help": "Help",
     "hugoNew": "Hugo New",

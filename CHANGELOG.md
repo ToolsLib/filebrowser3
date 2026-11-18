@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Move share management to a standalone Shares sidebar page; keep old settings links working through a redirect.
+- Edit existing share passwords and expiration without changing URLs. Password changes revoke old access tokens; atomic updates and conditional expiry cleanup preserve concurrent edits.
+
 - Fix empty archives when downloading a single selected file from a directory or public share.
 
 - Global default download speed and admin-controlled per-user inherit/custom/unlimited overrides, shared by private downloads, public shares, archives and content previews.

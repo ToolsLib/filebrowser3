@@ -53,6 +53,19 @@
         </button>
       </div>
 
+      <button
+        v-if="user.perm.share && user.perm.download"
+        class="action"
+        @click="toShares"
+        :class="{ 'is-active': $route.name === 'Shares' }"
+        :aria-current="$route.name === 'Shares' ? 'page' : undefined"
+        :aria-label="$t('sidebar.shares')"
+        :title="$t('sidebar.shares')"
+      >
+        <i class="material-icons">share</i>
+        <span>{{ $t("sidebar.shares") }}</span>
+      </button>
+
       <div v-if="user.perm.admin">
         <button
           class="action"
@@ -226,6 +239,10 @@ export default {
     },
     toGlobalSettings() {
       this.$router.push({ path: "/settings/global" });
+      this.closeHovers();
+    },
+    toShares() {
+      this.$router.push({ path: "/shares" });
       this.closeHovers();
     },
     help() {

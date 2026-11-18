@@ -9,7 +9,7 @@ const User = () => import("@/views/settings/User.vue");
 const Settings = () => import("@/views/Settings.vue");
 const GlobalSettings = () => import("@/views/settings/Global.vue");
 const ProfileSettings = () => import("@/views/settings/Profile.vue");
-const Shares = () => import("@/views/settings/Shares.vue");
+const Shares = () => import("@/views/Shares.vue");
 const Errors = () => import("@/views/Errors.vue");
 import { useAuthStore } from "@/stores/auth";
 import { baseURL, name } from "@/utils/constants";
@@ -23,7 +23,7 @@ const titles = {
   Files: "files.files",
   Settings: "sidebar.settings",
   ProfileSettings: "settings.profileSettings",
-  Shares: "settings.shareManagement",
+  Shares: "sidebar.shares",
   GlobalSettings: "settings.globalSettings",
   Users: "settings.users",
   User: "settings.user",
@@ -64,6 +64,12 @@ const routes = [
     ],
   },
   {
+    path: "/shares",
+    component: Layout,
+    meta: { requiresAuth: true, requiresShare: true },
+    children: [{ path: "", name: "Shares", component: Shares }],
+  },
+  {
     path: "/settings",
     component: Layout,
     meta: {
@@ -85,8 +91,7 @@ const routes = [
           },
           {
             path: "shares",
-            name: "Shares",
-            component: Shares,
+            redirect: "/shares",
           },
           {
             path: "global",
@@ -210,6 +215,12 @@ router.beforeResolve(async (to, from) => {
       if (authStore.user === null || !authStore.user.perm.admin) {
         return { path: "/403" };
       }
+    }
+    if (
+      to.matched.some((record) => record.meta.requiresShare) &&
+      (!authStore.user?.perm.share || !authStore.user?.perm.download)
+    ) {
+      return { path: "/403" };
     }
   }
 

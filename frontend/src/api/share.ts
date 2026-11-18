@@ -15,6 +15,19 @@ export async function remove(hash: string) {
   });
 }
 
+export interface ShareUpdate {
+  password?: string;
+  expires?: string;
+  unit?: string;
+}
+
+export function update(hash: string, changes: ShareUpdate) {
+  return fetchJSON<Share>(`/api/share/${encodeURIComponent(hash)}`, {
+    method: "PUT",
+    body: JSON.stringify(changes),
+  });
+}
+
 export async function create(
   url: string,
   password = "",
