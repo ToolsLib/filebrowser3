@@ -14,6 +14,7 @@
             v-model:createUserDir="createUserDir"
             :isDefault="false"
             :isNew="isNew"
+            :globalUploadLimit="globalUploadLimit"
           />
         </div>
 
@@ -65,6 +66,7 @@ const error = ref<StatusError>();
 const originalUser = ref<IUser>();
 const user = ref<IUser>();
 const createUserDir = ref<boolean>(false);
+const globalUploadLimit = ref<number>(0);
 const isCurrentPasswordRequired = ref<boolean>(false);
 
 const $showError = inject<IToastError>("$showError")!;
@@ -92,8 +94,10 @@ const fetchData = async () => {
   layoutStore.loading = true;
 
   try {
+    const configuration = await settings.get();
+    globalUploadLimit.value = configuration.uploadLimits?.globalLimit || 0;
     if (isNew.value) {
-      const { defaults, createUserDir: _createUserDir } = await settings.get();
+      const { defaults, createUserDir: _createUserDir } = configuration;
       isCurrentPasswordRequired.value = authMethod == "json";
       createUserDir.value = _createUserDir;
       user.value = {
@@ -105,7 +109,7 @@ const fetchData = async () => {
         id: 0,
       };
     } else {
-      const { authMethod } = await settings.get();
+      const { authMethod } = configuration;
       isCurrentPasswordRequired.value = authMethod == "json";
       const id = Array.isArray(route.params.id)
         ? route.params.id.join("")

@@ -71,6 +71,9 @@ var defaultEvents = []string{
 
 // Save saves the settings for the current instance.
 func (s *Storage) Save(set *Settings) error {
+	if set.MaxUploadSize < 0 || set.MaxUploadSize > MaximumUploadSize || set.Defaults.MaxUploadSize < 0 || set.Defaults.MaxUploadSize > MaximumUploadSize {
+		return fberrors.ErrInvalidDataType
+	}
 	if len(set.Key) == 0 {
 		return fberrors.ErrEmptyKey
 	}

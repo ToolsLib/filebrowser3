@@ -67,7 +67,7 @@ filebrowser [flags]
       --insecureCookies[=true|false]                allow non-Secure session cookies for loopback HTTP development
   -k, --key string                                  tls key
   -l, --log string                                  log output (default "stdout")
-      --maxUploadSize int                           maximum file upload size in bytes (positive; default 10 GiB) (default 10737418240)
+      --maxUploadSize int                           deployment upload ceiling in bytes (0: use global setting, default 10 GiB)
       --noauth[=true|false]                         use the noauth auther when using quick setup
       --password string                             hashed password for the first user when using quick setup
   -p, --port string                                 port to listen on (default "8080")

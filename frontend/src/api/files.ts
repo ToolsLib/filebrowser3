@@ -4,6 +4,10 @@ import { baseURL } from "@/utils/constants";
 import { upload as postTus, useTus } from "./tus";
 import { createURL, fetchURL, removePrefix, StatusError } from "./utils";
 import { isEncodableResponse, makeRawResource } from "@/utils/encodings";
+import {
+  oversizedUploadError,
+  uploadResponseError,
+} from "@/utils/upload-limits";
 
 export async function fetch(
   url: string,
@@ -166,6 +170,20 @@ export async function post(
   overwrite = false,
   onupload: any = () => {}
 ) {
+  if (content instanceof Blob && !url.endsWith("/")) {
+    const response = await fetchURL("/api/upload-limit", {
+      method: "GET",
+      cache: "no-store",
+    });
+    const { maxUploadSize } = await response.json();
+    if (content.size > maxUploadSize) {
+      throw oversizedUploadError(
+        content instanceof File ? content.name : url.split("/").pop() || "file",
+        content.size,
+        maxUploadSize
+      );
+    }
+  }
   // Use the pre-existing API if:
   const useResourcesApi =
     // a folder is being created
@@ -216,7 +234,7 @@ async function postResources(
       } else if (request.status === 409) {
         reject(new Error(request.status.toString()));
       } else {
-        reject(new Error(request.responseText));
+        reject(uploadResponseError(request.responseText, request.status));
       }
     };
 

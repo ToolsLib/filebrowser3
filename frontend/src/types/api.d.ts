@@ -8,6 +8,7 @@ interface ApiOpts {
   headers?: object;
   body?: any;
   signal?: AbortSignal;
+  cache?: RequestCache;
 }
 
 interface TusSettings {

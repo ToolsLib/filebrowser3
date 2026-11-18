@@ -55,6 +55,21 @@
       {{ t("settings.lockPassword") }}
     </p>
 
+    <p>
+      <label for="user-upload-limit">{{ t("settings.userUploadLimit") }}</label>
+      <upload-limit-input id="user-upload-limit" v-model="user.maxUploadSize" />
+    </p>
+    <p class="small">{{ t("settings.userUploadLimitHelp") }}</p>
+    <p class="small" v-if="globalUploadLimit">
+      {{
+        t("settings.effectiveUserUploadLimit", {
+          limit: formatUploadSize(
+            Math.min(user.maxUploadSize || globalUploadLimit, globalUploadLimit)
+          ),
+        })
+      }}
+    </p>
+
     <permissions v-model:perm="user.perm" />
     <commands v-if="enableExec" v-model:commands="user.commands" />
 
@@ -71,6 +86,8 @@ import Languages from "./Languages.vue";
 import Rules from "./Rules.vue";
 import Permissions from "./Permissions.vue";
 import Commands from "./Commands.vue";
+import UploadLimitInput from "./UploadLimitInput.vue";
+import { formatUploadSize } from "@/utils/upload-limits";
 import { enableExec } from "@/utils/constants";
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -85,6 +102,7 @@ const props = defineProps<{
   isNew: boolean;
   isDefault: boolean;
   createUserDir?: boolean;
+  globalUploadLimit?: number;
 }>();
 
 onMounted(() => {

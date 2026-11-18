@@ -1,5 +1,15 @@
 # Changelog
 
+## File Browser 3 — 1.0.0-rc.2
+
+- Configure global and per-user maximum upload sizes in Settings, including defaults for new accounts.
+- Show environment/configuration upload ceilings and effective limits; settings cannot raise a deployment ceiling.
+- Check file sizes before uploading and replace generic 413 failures with actionable messages, including proxy rejections.
+- Enforce the same policy for direct uploads, editor saves and resumable TUS transfers, including pending uploads after a policy change.
+- Require Go 1.27.4 and remove the Go 1.26 CI jobs while retaining Linux/Windows tests and vulnerability scans.
+
+The default remains 10 GiB per file. A zero global/user setting means inherit, never unlimited. Without a deployment ceiling, administrators can raise the global limit in the UI. RC1's implicit stored 10 GiB default becomes that editable fallback; explicit environment, flag and config-file ceilings remain enforced. See [upload limits and migration](docs/request-limits.md). Preserve existing volumes when upgrading. The Alpine runtime base remains unchanged pending upstream updates.
+
 ## File Browser 3 — 1.0.0-rc.1
 
 First independent ToolsLib release candidate, based on upstream File Browser v2.63.23. Check this fork's Releases and Actions for publication status.

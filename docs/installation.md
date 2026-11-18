@@ -5,7 +5,7 @@ File Browser is a single binary and can be used as standalone executable. Howeve
 ## Published File Browser 3 releases
 
 Use this fork's [GitHub Releases](https://github.com/ToolsLib/filebrowser3/releases)
-and Docker Hub `toolslib/filebrowser3`. The first candidate is `v1.0.0-rc.1`;
+and Docker Hub `toolslib/filebrowser3`. The current candidate is `v1.0.0-rc.2`;
 [release installation](releases.md) documents prebuilt images and version tags.
 
 ## Binary

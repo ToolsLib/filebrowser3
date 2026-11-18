@@ -1,5 +1,7 @@
 # Upload Integrity and Recovery
 
+Administrators can configure global and per-user maximum file sizes in Settings. Deployment ceilings such as `FB_MAX_UPLOAD_SIZE` take precedence; smaller global/user limits still apply. The browser reports oversized files before transfer, and both direct and TUS APIs enforce the same policy. See [request limits](request-limits.md) for inheritance, migration and proxy settings.
+
 Direct uploads and editor saves write a private sibling file, sync and close it, and rename it over the destination only after the write succeeds. Failure cleanup removes that temporary file and never recursively deletes the destination. Overwriting a directory is rejected.
 
 Resumable TUS uploads use a private staging file and journal until every declared byte arrives. An existing destination remains readable throughout the transfer. The upload URL contains an `uploadID`; HEAD, PATCH, and DELETE must use the Location returned by POST. These URLs are generation-specific and are authorized against the uploading user. Legacy pending uploads from earlier versions cannot resume after this upgrade.

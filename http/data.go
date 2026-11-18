@@ -1,6 +1,7 @@
 package fbhttp
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -164,6 +165,11 @@ func handle(fn handleFunc, prefix string, store *storage.Storage, server *settin
 		}
 
 		if status != 0 {
+			var uploadError *uploadLimitError
+			if errors.As(err, &uploadError) {
+				writeUploadLimitError(w, uploadError.limit)
+				return
+			}
 			txt := http.StatusText(status)
 			if status == http.StatusBadRequest && err != nil {
 				txt += " (" + err.Error() + ")"

@@ -1,4 +1,6 @@
 interface ISettings {
+  maxUploadSize?: number;
+  uploadLimits?: UploadLimits;
   signup: boolean;
   createUserDir: boolean;
   hideLoginButton: boolean;
@@ -14,6 +16,7 @@ interface ISettings {
 }
 
 interface SettingsDefaults {
+  maxUploadSize?: number;
   scope: string;
   locale: string;
   viewMode: ViewModeType;
@@ -25,6 +28,13 @@ interface SettingsDefaults {
   hideDotfiles: boolean;
   dateFormat: boolean;
   aceEditorTheme: string;
+}
+
+interface UploadLimits {
+  deploymentLimit: number;
+  deploymentSource: string;
+  defaultLimit: number;
+  globalLimit: number;
 }
 
 interface SettingsBranding {

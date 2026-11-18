@@ -127,6 +127,39 @@
             />
           </p>
 
+          <h3>{{ t("settings.uploadLimits") }}</h3>
+          <p>
+            <label for="global-upload-limit">{{
+              t("settings.globalUploadLimit")
+            }}</label>
+            <upload-limit-input
+              id="global-upload-limit"
+              v-model="settings.maxUploadSize"
+            />
+          </p>
+          <p class="small">{{ t("settings.globalUploadLimitHelp") }}</p>
+          <p class="small" v-if="settings.uploadLimits?.deploymentLimit">
+            {{
+              t(
+                settings.uploadLimits.deploymentSource === "environment"
+                  ? "settings.uploadEnvironmentCeiling"
+                  : "settings.uploadDeploymentCeiling",
+                {
+                  limit: formatUploadSize(
+                    settings.uploadLimits.deploymentLimit
+                  ),
+                }
+              )
+            }}
+          </p>
+          <p class="small" role="status">
+            {{
+              t("settings.effectiveGlobalUploadLimit", {
+                limit: formatUploadSize(effectiveGlobalUploadLimit),
+              })
+            }}
+          </p>
+
           <h3>{{ t("settings.tusUploads") }}</h3>
 
           <p class="small">{{ t("settings.tusUploadsHelp") }}</p>
@@ -183,6 +216,7 @@
           <user-form
             :isNew="false"
             :isDefault="true"
+            :globalUploadLimit="effectiveGlobalUploadLimit"
             v-model:user="settings.defaults"
           />
         </div>
@@ -257,6 +291,8 @@ import { StatusError } from "@/api/utils";
 import Rules from "@/components/settings/Rules.vue";
 import Themes from "@/components/settings/Themes.vue";
 import UserForm from "@/components/settings/UserForm.vue";
+import UploadLimitInput from "@/components/settings/UploadLimitInput.vue";
+import { formatUploadSize } from "@/utils/upload-limits";
 import { useLayoutStore } from "@/stores/layout";
 import { enableExec } from "@/utils/constants";
 import { getTheme, setTheme } from "@/utils/theme";
@@ -281,6 +317,15 @@ const $showSuccess = inject<IToastSuccess>("$showSuccess")!;
 const { t } = useI18n();
 
 const layoutStore = useLayoutStore();
+const effectiveGlobalUploadLimit = computed(() => {
+  const limits = settings.value?.uploadLimits;
+  const configured =
+    settings.value?.maxUploadSize ||
+    limits?.deploymentLimit ||
+    limits?.defaultLimit ||
+    10 * 1024 ** 3;
+  return Math.min(configured, limits?.deploymentLimit || Infinity);
+});
 
 const formattedChunkSize = computed({
   get() {

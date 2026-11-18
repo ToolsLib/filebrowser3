@@ -47,7 +47,7 @@ filebrowser config set [flags]
       --locale string                                 locale for users (default "en")
       --lockPassword[=true|false]                     lock password
   -l, --log string                                    log output (default "stdout")
-      --maxUploadSize int                             maximum file upload size in bytes (positive; default 10 GiB) (default 10737418240)
+      --maxUploadSize int                             deployment upload ceiling in bytes (0: use global setting, default 10 GiB)
       --minimumPasswordLength uint                    minimum password length for new users (default 12)
       --perm.admin[=true|false]                       admin perm for users
       --perm.create[=true|false]                      create perm for users (default true)

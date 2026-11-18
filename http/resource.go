@@ -179,6 +179,9 @@ func resourcePostHandler(fileCache FileCache) handleFunc {
 			}, "upload", r.URL.Path, "", d.user)
 			return errToStatus(err), err
 		}
+		if err := limitUploadBody(w, r, d); err != nil {
+			return http.StatusRequestEntityTooLarge, err
+		}
 
 		file, err := files.NewFileInfo(&files.FileOptions{
 			Fs:         d.user.Fs,
@@ -220,13 +223,16 @@ func resourcePostHandler(fileCache FileCache) handleFunc {
 			return nil
 		}, "upload", r.URL.Path, "", d.user)
 
-		return errToStatus(err), err
+		return uploadWriteResult(err, d)
 	})
 }
 
 var resourcePutHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	if !d.user.Perm.Modify || !d.Check(r.URL.Path) {
 		return http.StatusForbidden, nil
+	}
+	if err := limitUploadBody(w, r, d); err != nil {
+		return http.StatusRequestEntityTooLarge, err
 	}
 	unlock, err := lockFileMutation(r.Context(), d.user.FullPath(r.URL.Path))
 	if err != nil {
@@ -258,7 +264,7 @@ var resourcePutHandler = withUser(func(w http.ResponseWriter, r *http.Request, d
 		return nil
 	}, "save", r.URL.Path, "", d.user)
 
-	return errToStatus(err), err
+	return uploadWriteResult(err, d)
 })
 
 func resourcePatchHandler(fileCache FileCache) handleFunc {

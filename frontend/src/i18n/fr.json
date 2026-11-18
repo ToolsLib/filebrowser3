@@ -65,6 +65,9 @@
     "abortUpload": "Êtes-vous sûr de vouloir annuler ?"
   },
   "errors": {
+    "uploadTooLarge": "« {name} » fait {size}. Votre taille maximale de téléversement est de {limit} par fichier.",
+    "uploadLimitExceeded": "Fichier trop volumineux. Votre limite est de {limit} par fichier. Demandez à un administrateur de l’augmenter.",
+    "uploadRejectedTooLarge": "Téléversement refusé car trop volumineux (413). Le serveur ou le proxy peut imposer une limite inférieure. Demandez à un administrateur de vérifier les limites.",
     "forbidden": "Vous n'avez pas la permission d'accéder à cela.",
     "internal": "Aïe ! Quelque chose s'est mal passé.",
     "notFound": "Impossible d'accéder à cet emplacement.",
@@ -192,6 +195,16 @@
     "video": "Vidéo"
   },
   "settings": {
+    "uploadLimits": "Limites de téléversement",
+    "globalUploadLimit": "Taille maximale par fichier",
+    "globalUploadLimitHelp": "Saisissez une taille comme 100 GiB. Zéro reprend la limite du déploiement, ou 10 GiB si aucune n’est configurée. Les limites utilisateur inférieures s’appliquent également.",
+    "uploadEnvironmentCeiling": "FB_MAX_UPLOAD_SIZE impose un plafond de {limit}. Les paramètres peuvent réduire cette limite, mais pas l’augmenter.",
+    "uploadDeploymentCeiling": "La configuration du serveur impose un plafond de {limit}. Les paramètres peuvent réduire cette limite, mais pas l’augmenter.",
+    "effectiveGlobalUploadLimit": "Limite globale effective : {limit} par fichier.",
+    "userUploadLimit": "Taille maximale par fichier pour cet utilisateur",
+    "userUploadLimitHelp": "Zéro reprend la limite globale. Une limite utilisateur peut seulement réduire le maximum effectif, sans dépasser les limites globale et du déploiement.",
+    "effectiveUserUploadLimit": "Limite effective pour cet utilisateur : {limit} par fichier.",
+    "uploadLimitInvalid": "Saisissez un nombre entier d’octets ou une taille comme 500 MiB ou 100 GiB, entre 0 et 1 PiB.",
     "aceEditorTheme": "Éditeur de Thème Ace",
     "admin": "Admin",
     "administrator": "Administrateur'ice",

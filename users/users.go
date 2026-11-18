@@ -36,6 +36,7 @@ type User struct {
 	HideDotfiles          bool          `json:"hideDotfiles"`
 	DateFormat            bool          `json:"dateFormat"`
 	AceEditorTheme        string        `json:"aceEditorTheme"`
+	MaxUploadSize         int64         `json:"maxUploadSize"`
 }
 
 // GetRules implements rules.Provider.
@@ -51,6 +52,7 @@ var checkableFields = []string{
 	"Commands",
 	"Sorting",
 	"Rules",
+	"MaxUploadSize",
 }
 
 // Clean cleans up a user and verifies if all its fields
@@ -62,6 +64,10 @@ func (u *User) Clean(baseScope string, followExternalSymlinks bool, fields ...st
 
 	for _, field := range fields {
 		switch field {
+		case "MaxUploadSize":
+			if u.MaxUploadSize < 0 || u.MaxUploadSize > 1<<50 {
+				return fberrors.ErrInvalidDataType
+			}
 		case "Username":
 			if u.Username == "" {
 				return fberrors.ErrEmptyUsername

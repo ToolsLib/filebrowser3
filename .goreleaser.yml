@@ -50,6 +50,8 @@ archives:
       - docs/sessions.md
       - docs/deployment.md
       - docs/performance.md
+      - docs/uploads.md
+      - docs/request-limits.md
     formats: ["tar.gz"]
     format_overrides:
       - goos: windows

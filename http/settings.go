@@ -2,6 +2,7 @@ package fbhttp
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/filebrowser/filebrowser/v2/rules"
@@ -21,6 +22,8 @@ type settingsData struct {
 	Tus                   settings.Tus          `json:"tus"`
 	Shell                 []string              `json:"shell"`
 	Commands              map[string][]string   `json:"commands"`
+	MaxUploadSize         int64                 `json:"maxUploadSize"`
+	UploadLimits          uploadLimits          `json:"uploadLimits"`
 }
 
 var settingsGetHandler = withAdmin(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
@@ -37,6 +40,8 @@ var settingsGetHandler = withAdmin(func(w http.ResponseWriter, r *http.Request, 
 		Tus:                   d.settings.Tus,
 		Shell:                 d.settings.Shell,
 		Commands:              d.settings.Commands,
+		MaxUploadSize:         d.settings.MaxUploadSize,
+		UploadLimits:          describeUploadLimits(d),
 	}
 
 	return renderJSON(w, r, data)
@@ -47,6 +52,9 @@ var settingsPutHandler = withAdmin(func(_ http.ResponseWriter, r *http.Request, 
 	err := json.NewDecoder(r.Body).Decode(req)
 	if err != nil {
 		return http.StatusBadRequest, err
+	}
+	if req.MaxUploadSize < 0 || req.MaxUploadSize > settings.MaximumUploadSize || req.Defaults.MaxUploadSize < 0 || req.Defaults.MaxUploadSize > settings.MaximumUploadSize {
+		return http.StatusBadRequest, fmt.Errorf("upload limits must be between 0 and %d bytes", settings.MaximumUploadSize)
 	}
 
 	d.settings.Signup = req.Signup
@@ -60,6 +68,7 @@ var settingsPutHandler = withAdmin(func(_ http.ResponseWriter, r *http.Request, 
 	d.settings.Shell = req.Shell
 	d.settings.Commands = req.Commands
 	d.settings.HideLoginButton = req.HideLoginButton
+	d.settings.MaxUploadSize = req.MaxUploadSize
 
 	err = d.store.Settings.Save(d.settings)
 	return errToStatus(err), err
