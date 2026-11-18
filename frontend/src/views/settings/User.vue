@@ -15,6 +15,7 @@
             :isDefault="false"
             :isNew="isNew"
             :globalUploadLimit="globalUploadLimit"
+            :globalDownloadRate="globalDownloadRate"
           />
         </div>
 
@@ -67,6 +68,7 @@ const originalUser = ref<IUser>();
 const user = ref<IUser>();
 const createUserDir = ref<boolean>(false);
 const globalUploadLimit = ref<number>(0);
+const globalDownloadRate = ref<number>(0);
 const isCurrentPasswordRequired = ref<boolean>(false);
 
 const $showError = inject<IToastError>("$showError")!;
@@ -96,6 +98,7 @@ const fetchData = async () => {
   try {
     const configuration = await settings.get();
     globalUploadLimit.value = configuration.uploadLimits?.globalLimit || 0;
+    globalDownloadRate.value = configuration.downloadRate || 0;
     if (isNew.value) {
       const { defaults, createUserDir: _createUserDir } = configuration;
       isCurrentPasswordRequired.value = authMethod == "json";

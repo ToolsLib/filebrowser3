@@ -37,7 +37,7 @@ type FileCache interface {
 }
 
 func previewHandler(imgSvc ImgService, fileCache FileCache, enableThumbnails, resizePreview bool) handleFunc {
-	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	return withUser(withDownload(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 		if !d.user.Perm.Download {
 			return http.StatusAccepted, nil
 		}
@@ -70,7 +70,7 @@ func previewHandler(imgSvc ImgService, fileCache FileCache, enableThumbnails, re
 		default:
 			return http.StatusNotImplemented, fmt.Errorf("can't create preview for %s type", file.Type)
 		}
-	})
+	}))
 }
 
 func handleImagePreview(

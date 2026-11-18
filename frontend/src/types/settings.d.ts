@@ -1,4 +1,5 @@
 interface ISettings {
+  downloadRate?: number | null;
   maxUploadSize?: number;
   uploadLimits?: UploadLimits;
   signup: boolean;
@@ -16,6 +17,7 @@ interface ISettings {
 }
 
 interface SettingsDefaults {
+  downloadRate?: number | null;
   maxUploadSize?: number;
   scope: string;
   locale: string;

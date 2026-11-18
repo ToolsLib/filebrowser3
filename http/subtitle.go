@@ -32,7 +32,7 @@ func (b *subtitleBuffer) Write(p []byte) (int, error) {
 
 func (b *subtitleBuffer) WriteString(value string) (int, error) { return b.Write([]byte(value)) }
 
-var subtitleHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+var subtitleHandler = withUser(withDownload(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	if !d.user.Perm.Download {
 		return http.StatusAccepted, nil
 	}
@@ -54,7 +54,7 @@ var subtitleHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *d
 	}
 
 	return subtitleFileHandler(w, r, file)
-})
+}))
 
 func subtitleFileHandler(w http.ResponseWriter, r *http.Request, file *files.FileInfo) (int, error) {
 	// if its not a subtitle file, reject

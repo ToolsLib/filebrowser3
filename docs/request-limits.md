@@ -1,5 +1,7 @@
 # Request and resource limits
 
+Download speed policies and the deferred Redis/multi-container design are documented in [download limits](download-limits.md).
+
 Limits apply to API routes under the configured base URL. Static files and health checks remain available independently.
 
 | Boundary                                                                                  | Limit                                                                                                  |
@@ -15,6 +17,7 @@ Limits apply to API routes under the configured base URL. Static files and healt
 | Rate-limit bookkeeping                                                                    | At most 4,096 peer/class buckets, idle buckets expire after 10 minutes                                 |
 | Authentication and other metadata bodies                                                  | 1 MiB                                                                                                  |
 | Direct file and TUS upload size                                                           | 10 GiB by default; global and per-user settings, bounded by any deployment ceiling; maximum 1 PiB |
+| Aggregate download speed per user | Unlimited by default; global default and per-user overrides; shared with public shares within one process |
 | WebSocket command message                                                                 | 16 KiB, initial read 30 seconds; output writes 10 seconds                                              |
 | Command lifetime/output line                                                              | 10 minutes / 256 KiB; executable commands remain trusted shell-equivalent capability                   |
 | Subtitle conversion                                                                       | 10 MiB input, 16 MiB output, two simultaneous conversions                                              |

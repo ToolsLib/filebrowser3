@@ -154,14 +154,14 @@ var publicShareHandler = withHashFile(func(w http.ResponseWriter, r *http.Reques
 	return renderJSON(w, r, file)
 })
 
-var publicDlHandler = withHashFile(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+var publicDlHandler = withHashFile(withDownload(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	file := d.raw.(*files.FileInfo)
 	if !file.IsDir {
 		return rawFileHandler(w, r, file)
 	}
 
 	return rawDirHandler(w, r, d, file)
-})
+}))
 
 func authenticateShareRequest(r *http.Request, l *share.Link) (int, error) {
 	if l.PasswordHash == "" {

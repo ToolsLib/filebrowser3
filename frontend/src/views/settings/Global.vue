@@ -160,6 +160,19 @@
             }}
           </p>
 
+          <h3>{{ t("settings.downloadLimits") }}</h3>
+          <p>
+            <label for="global-download-rate-mode">{{
+              t("settings.globalDownloadRate")
+            }}</label>
+            <download-rate-input
+              id="global-download-rate"
+              v-model="settings.downloadRate"
+            />
+          </p>
+          <p class="small">{{ t("settings.globalDownloadRateHelp") }}</p>
+          <p class="small">{{ t("settings.downloadSingleContainer") }}</p>
+
           <h3>{{ t("settings.tusUploads") }}</h3>
 
           <p class="small">{{ t("settings.tusUploadsHelp") }}</p>
@@ -217,6 +230,7 @@
             :isNew="false"
             :isDefault="true"
             :globalUploadLimit="effectiveGlobalUploadLimit"
+            :globalDownloadRate="settings.downloadRate || 0"
             v-model:user="settings.defaults"
           />
         </div>
@@ -292,6 +306,7 @@ import Rules from "@/components/settings/Rules.vue";
 import Themes from "@/components/settings/Themes.vue";
 import UserForm from "@/components/settings/UserForm.vue";
 import UploadLimitInput from "@/components/settings/UploadLimitInput.vue";
+import DownloadRateInput from "@/components/settings/DownloadRateInput.vue";
 import { formatUploadSize } from "@/utils/upload-limits";
 import { useLayoutStore } from "@/stores/layout";
 import { enableExec } from "@/utils/constants";

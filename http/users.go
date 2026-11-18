@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	NonModifiableFieldsForNonAdmin = []string{"Username", "Scope", "LockPassword", "Perm", "Commands", "Rules", "MaxUploadSize"}
+	NonModifiableFieldsForNonAdmin = []string{"Username", "Scope", "LockPassword", "Perm", "Commands", "Rules", "MaxUploadSize", "DownloadRate"}
 )
 
 type modifyUserRequest struct {
@@ -56,6 +56,9 @@ func getUser(_ http.ResponseWriter, r *http.Request) (*modifyUserRequest, error)
 		return nil, fmt.Errorf("upload limit must be between 0 and %d bytes", settings.MaximumUploadSize)
 	}
 
+	if !users.ValidDownloadRate(req.Data.DownloadRate) {
+		return nil, fmt.Errorf("download speed must be between 0 and %d bytes/second", users.MaximumDownloadRate)
+	}
 	return req, nil
 }
 
@@ -201,6 +204,7 @@ var userPutHandler = withSelfOrAdmin(func(w http.ResponseWriter, r *http.Request
 			"commands":      {},
 			"perm":          {},
 			"maxuploadsize": {},
+			"downloadrate":  {},
 		}
 
 		for _, field := range req.Which {

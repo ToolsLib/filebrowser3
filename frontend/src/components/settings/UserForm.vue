@@ -70,6 +70,23 @@
       }}
     </p>
 
+    <p>
+      <label for="user-download-rate-mode">{{
+        t("settings.userDownloadRate")
+      }}</label>
+      <download-rate-input
+        id="user-download-rate"
+        v-model="user.downloadRate"
+        inheritable
+      />
+    </p>
+    <p class="small">{{ t("settings.userDownloadRateHelp") }}</p>
+    <p class="small" v-if="globalDownloadRate !== undefined">
+      {{
+        t("settings.effectiveDownloadRate", { speed: effectiveDownloadSpeed })
+      }}
+    </p>
+
     <permissions v-model:perm="user.perm" />
     <commands v-if="enableExec" v-model:commands="user.commands" />
 
@@ -87,6 +104,8 @@ import Rules from "./Rules.vue";
 import Permissions from "./Permissions.vue";
 import Commands from "./Commands.vue";
 import UploadLimitInput from "./UploadLimitInput.vue";
+import DownloadRateInput from "./DownloadRateInput.vue";
+import { formatDownloadRate } from "@/utils/download-limits";
 import { formatUploadSize } from "@/utils/upload-limits";
 import { enableExec } from "@/utils/constants";
 import { computed, onMounted, ref, watch } from "vue";
@@ -103,7 +122,13 @@ const props = defineProps<{
   isDefault: boolean;
   createUserDir?: boolean;
   globalUploadLimit?: number;
+  globalDownloadRate?: number;
 }>();
+
+const effectiveDownloadSpeed = computed(() => {
+  const rate = props.user.downloadRate ?? props.globalDownloadRate ?? 0;
+  return rate ? formatDownloadRate(rate) : t("settings.downloadUnlimited");
+});
 
 onMounted(() => {
   if (props.user.scope) {

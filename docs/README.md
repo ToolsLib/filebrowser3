@@ -18,6 +18,7 @@ File Browser provides a file managing interface within a specified directory and
 - [Authentication](authentication.md)
 - [Sessions and credential transport](sessions.md)
 - [Request limits](request-limits.md)
+- [Download speed policies and planned Redis coordination](download-limits.md)
 - [Frontend maintenance](frontend-maintenance.md)
 - [UI review and modernization](reviews/2026-11-16-ui-modernization.md)
 - [Performance behavior and limits](performance.md)

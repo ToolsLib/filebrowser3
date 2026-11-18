@@ -23,12 +23,13 @@ type handleFunc func(w http.ResponseWriter, r *http.Request, d *data) (int, erro
 
 type data struct {
 	*runner.Runner
-	settings *settings.Settings
-	server   *settings.Server
-	store    *storage.Storage
-	user     *users.User
-	session  *sessions.Session
-	raw      interface{}
+	settings  *settings.Settings
+	server    *settings.Server
+	store     *storage.Storage
+	user      *users.User
+	session   *sessions.Session
+	raw       interface{}
+	downloads *downloadController
 
 	// checkerPrefix is prepended to every path before evaluating rules. It is
 	// set when the user's filesystem has been rebased onto a subdirectory (as
@@ -140,7 +141,11 @@ func (d *data) rulePath(path string) string {
 	return path
 }
 
-func handle(fn handleFunc, prefix string, store *storage.Storage, server *settings.Server) http.Handler {
+func handle(fn handleFunc, prefix string, store *storage.Storage, server *settings.Server, controllers ...*downloadController) http.Handler {
+	var downloads *downloadController
+	if len(controllers) > 0 {
+		downloads = controllers[0]
+	}
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for k, v := range globalHeaders {
 			w.Header().Set(k, v)
@@ -153,10 +158,11 @@ func handle(fn handleFunc, prefix string, store *storage.Storage, server *settin
 		}
 
 		status, err := fn(w, r, &data{
-			Runner:   &runner.Runner{Enabled: server.EnableExec, Settings: settings},
-			store:    store,
-			settings: settings,
-			server:   server,
+			Runner:    &runner.Runner{Enabled: server.EnableExec, Settings: settings},
+			store:     store,
+			settings:  settings,
+			server:    server,
+			downloads: downloads,
 		})
 
 		if status >= 400 || err != nil {

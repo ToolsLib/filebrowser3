@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (status int, resultErr error) {
 	encoding := r.Header.Get("X-Encoding") == "true"
 	checksum := r.URL.Query().Get("checksum")
 	metadata := r.URL.Query().Get("meta") == "true"
@@ -40,6 +40,15 @@ var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d
 	})
 	if err != nil {
 		return errToStatus(err), err
+	}
+	if !file.IsDir && d.user.Perm.Download && !metadata && (encoding || checksum == "") {
+		stream, release, err := limitDownload(w, r, d)
+		if err != nil {
+			return http.StatusServiceUnavailable, err
+		}
+		defer release()
+		defer func() { stream.abortIfFailed(status, resultErr) }()
+		w = stream
 	}
 
 	if file.IsDir {

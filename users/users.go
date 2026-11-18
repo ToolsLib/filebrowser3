@@ -12,6 +12,12 @@ import (
 // ViewMode describes a view mode.
 type ViewMode string
 
+const MaximumDownloadRate int64 = 1 << 40 // Bytes/second.
+
+func ValidDownloadRate(rate *int64) bool {
+	return rate == nil || (*rate >= 0 && *rate <= MaximumDownloadRate)
+}
+
 const (
 	ListViewMode   ViewMode = "list"
 	MosaicViewMode ViewMode = "mosaic"
@@ -37,6 +43,7 @@ type User struct {
 	DateFormat            bool          `json:"dateFormat"`
 	AceEditorTheme        string        `json:"aceEditorTheme"`
 	MaxUploadSize         int64         `json:"maxUploadSize"`
+	DownloadRate          *int64        `json:"downloadRate"`
 }
 
 // GetRules implements rules.Provider.
@@ -53,6 +60,7 @@ var checkableFields = []string{
 	"Sorting",
 	"Rules",
 	"MaxUploadSize",
+	"DownloadRate",
 }
 
 // Clean cleans up a user and verifies if all its fields
@@ -64,6 +72,10 @@ func (u *User) Clean(baseScope string, followExternalSymlinks bool, fields ...st
 
 	for _, field := range fields {
 		switch field {
+		case "DownloadRate":
+			if !ValidDownloadRate(u.DownloadRate) {
+				return fberrors.ErrInvalidDataType
+			}
 		case "MaxUploadSize":
 			if u.MaxUploadSize < 0 || u.MaxUploadSize > 1<<50 {
 				return fberrors.ErrInvalidDataType
