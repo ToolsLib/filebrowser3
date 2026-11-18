@@ -2,15 +2,16 @@
 
 File Browser 3 is published from https://github.com/ToolsLib/filebrowser3.
 The public Docker Hub image is `toolslib/filebrowser3`.
-The current release candidate is **[v1.0.0-rc.2](https://github.com/ToolsLib/filebrowser3/releases/tag/v1.0.0-rc.2)**.
-It adds configurable global/per-user upload limits and clearer errors. Releases
+The current release candidate is **[v1.0.0-rc.3](https://github.com/ToolsLib/filebrowser3/releases/tag/v1.0.0-rc.3)**.
+It adds shared per-user download speed limits, a dedicated Shares page, editable
+share passwords/expiration and a single-file archive fix. Releases
 provide standalone archives, checksums and a multi-platform image; check the
 release page and linked Actions run for publication status.
 
 ## Release channels
 
-- GitHub tags use `v1.0.0-rc.2`; container tags omit `v`, for example
-  `toolslib/filebrowser3:1.0.0-rc.2`.
+- GitHub tags use `v1.0.0-rc.3`; container tags omit `v`, for example
+  `toolslib/filebrowser3:1.0.0-rc.3`.
 - Release candidates are GitHub prereleases and get only their exact version
   image tag. They never update `latest`, major or minor tags.
 - Stable releases get their exact image tag, then major/minor/`latest` aliases
@@ -68,8 +69,8 @@ Before creating the tag:
 5. Create an annotated tag and push it, for example:
 
    ```text
-   git tag -a v1.0.0-rc.2 -m "File Browser 3 v1.0.0-rc.2"
-   git push origin v1.0.0-rc.2
+   git tag -a v1.0.0-rc.3 -m "File Browser 3 v1.0.0-rc.3"
+   git push origin v1.0.0-rc.3
    ```
 
 The workflow repeats its required checks for the tagged commit. A failed run
@@ -83,7 +84,7 @@ Docker Compose and Node 26 are needed for the repository's secret helper; a Go
 compiler is not required when using `--image`:
 
 ```text
-node docker/local/prepare-secrets.mjs --image toolslib/filebrowser3:1.0.0-rc.2
+node docker/local/prepare-secrets.mjs --image toolslib/filebrowser3:1.0.0-rc.3
 docker compose -f compose.release.yaml -f compose.loopback.yaml up -d --wait
 ```
 
@@ -95,7 +96,7 @@ proxy, omit `compose.loopback.yaml` so Secure cookies remain enabled.
 Optional Redis is supported with the same override:
 
 ```text
-node docker/local/prepare-secrets.mjs --redis --image toolslib/filebrowser3:1.0.0-rc.2
+node docker/local/prepare-secrets.mjs --redis --image toolslib/filebrowser3:1.0.0-rc.3
 docker compose -f compose.release.yaml -f compose.redis.yaml up -d --wait
 ```
 

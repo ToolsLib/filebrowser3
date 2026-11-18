@@ -1,6 +1,6 @@
 # Download speed limits
 
-Available in source after v1.0.0-rc.2; the published RC2 image does not include this feature.
+Available starting with v1.0.0-rc.3.
 
 Administrators configure **Global settings → Download speed limits**. This is a default for each user, not a shared server-wide bandwidth pool. The initial default is unlimited. User settings and defaults for newly created users offer three choices:
 
