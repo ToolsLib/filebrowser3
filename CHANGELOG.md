@@ -2,13 +2,15 @@
 
 ## Unreleased
 
+## File Browser 3 — 1.0.0-rc.3
+
 - Move share management to a standalone Shares sidebar page; keep old settings links working through a redirect.
 - Edit existing share passwords and expiration without changing URLs. Password changes revoke old access tokens; atomic updates and conditional expiry cleanup preserve concurrent edits.
-
 - Fix empty archives when downloading a single selected file from a directory or public share.
-
 - Global default download speed and admin-controlled per-user inherit/custom/unlimited overrides, shared by private downloads, public shares, archives and content previews.
 - Bounded streaming enforcement, cancellation, live policy refresh and range/resume support. Multi-container Redis coordination is documented as planned work in [download limits](docs/download-limits.md).
+
+Existing installations keep unlimited download speed until an administrator configures a limit. Preserve file, database and configuration volumes when upgrading. Download budgets are shared within one process; the optional Redis upload cache does not coordinate download bandwidth. The Alpine runtime base remains unchanged.
 
 ## File Browser 3 — 1.0.0-rc.2
 

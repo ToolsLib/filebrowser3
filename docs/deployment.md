@@ -1,6 +1,6 @@
 # Deployment
 
-Source versions after RC2 can configure global/per-user [download speed limits](download-limits.md). Budgets are shared within one application process only. The existing Redis upload-cache option does not coordinate download bandwidth; multi-container enforcement is deferred and requires both shared identity/session storage and a distributed budget backend.
+Starting with RC3, administrators can configure global/per-user [download speed limits](download-limits.md). Budgets are shared within one application process only. The existing Redis upload-cache option does not coordinate download bandwidth; multi-container enforcement is deferred and requires both shared identity/session storage and a distributed budget backend.
 
 ## Published images
 

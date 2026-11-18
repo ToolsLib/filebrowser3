@@ -1,6 +1,6 @@
 # Managing shares
 
-Available in source after v1.0.0-rc.2; the RC2 image does not include share editing.
+The dedicated Shares page and share editing are available starting with v1.0.0-rc.3.
 
 Open **Shares** in the main sidebar. Users with Share and Download permission can manage their own links; administrators with those permissions can manage links across users. Existing bookmarks to `/settings/shares` redirect to `/shares`. Creating a link remains available from My files.
 
