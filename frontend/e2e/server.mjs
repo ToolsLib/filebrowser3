@@ -156,7 +156,11 @@ const server = spawn(
     "--baseURL",
     "/test-app",
   ],
-  { stdio: "inherit", windowsHide: true }
+  {
+    stdio: "inherit",
+    windowsHide: true,
+    env: { ...process.env, FB_MAX_UPLOAD_SIZE: "107374182400" },
+  }
 );
 for (const signal of ["SIGINT", "SIGTERM"])
   process.on(signal, () => server.kill(signal));

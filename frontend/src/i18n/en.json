@@ -65,6 +65,9 @@
     "abortUpload": "Are you sure you wish to abort?"
   },
   "errors": {
+    "uploadTooLarge": "\"{name}\" is {size}. Your maximum upload size is {limit} per file.",
+    "uploadLimitExceeded": "File is too large. Your maximum upload size is {limit} per file. Ask an administrator to increase the limit.",
+    "uploadRejectedTooLarge": "Upload rejected as too large (413). The server or reverse proxy may enforce a smaller limit. Ask an administrator to check the upload limits.",
     "forbidden": "You don't have permissions to access this.",
     "internal": "Something really went wrong.",
     "notFound": "This location can't be reached.",
@@ -192,6 +195,16 @@
     "video": "Video"
   },
   "settings": {
+    "uploadLimits": "Upload limits",
+    "globalUploadLimit": "Maximum upload size per file",
+    "globalUploadLimitHelp": "Enter a size such as 100 GiB. Zero inherits the deployment limit, or 10 GiB when none is configured. Smaller user limits still apply.",
+    "uploadEnvironmentCeiling": "FB_MAX_UPLOAD_SIZE enforces a deployment ceiling of {limit}. Settings can lower this limit, but cannot raise it.",
+    "uploadDeploymentCeiling": "Server configuration enforces a deployment ceiling of {limit}. Settings can lower this limit, but cannot raise it.",
+    "effectiveGlobalUploadLimit": "Effective global limit: {limit} per file.",
+    "userUploadLimit": "User maximum upload size per file",
+    "userUploadLimitHelp": "Zero inherits the global limit. A user limit can only reduce the effective maximum; it cannot raise the global or deployment limit.",
+    "effectiveUserUploadLimit": "Effective limit for this user: {limit} per file.",
+    "uploadLimitInvalid": "Enter a whole number of bytes or a size such as 500 MiB or 100 GiB, between 0 and 1 PiB.",
     "aceEditorTheme": "Ace editor theme",
     "admin": "Admin",
     "administrator": "Administrator",

@@ -3,6 +3,7 @@ import { baseURL, tusEndpoint, tusSettings, origin } from "@/utils/constants";
 import { useAuthStore } from "@/stores/auth";
 import { removePrefix } from "@/api/utils";
 import { renew } from "@/utils/auth";
+import { uploadResponseError } from "@/utils/upload-limits";
 
 const RETRY_BASE_DELAY = 1000;
 const RETRY_MAX_DELAY = 20000;
@@ -69,7 +70,14 @@ export async function upload(
 
         console.error(error);
 
-        reject(new Error(message));
+        reject(
+          uploadResponseError(
+            message,
+            error instanceof tus.DetailedError
+              ? error.originalResponse?.getStatus() || 0
+              : 0
+          )
+        );
       },
       onProgress: function (bytesUploaded) {
         if (typeof onupload === "function") {

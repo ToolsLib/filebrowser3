@@ -1,4 +1,5 @@
 interface IUser {
+  maxUploadSize?: number;
   id: number;
   username: string;
   password: string;
@@ -20,6 +21,7 @@ interface IUser {
 type ViewModeType = "list" | "mosaic" | "mosaic gallery";
 
 interface IUserForm {
+  maxUploadSize?: number;
   id?: number;
   username?: string;
   password?: string;

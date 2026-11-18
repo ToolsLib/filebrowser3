@@ -3,6 +3,7 @@ package fbhttp
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"sort"
@@ -15,11 +16,12 @@ import (
 
 	"github.com/filebrowser/filebrowser/v2/auth"
 	fberrors "github.com/filebrowser/filebrowser/v2/errors"
+	"github.com/filebrowser/filebrowser/v2/settings"
 	"github.com/filebrowser/filebrowser/v2/users"
 )
 
 var (
-	NonModifiableFieldsForNonAdmin = []string{"Username", "Scope", "LockPassword", "Perm", "Commands", "Rules"}
+	NonModifiableFieldsForNonAdmin = []string{"Username", "Scope", "LockPassword", "Perm", "Commands", "Rules", "MaxUploadSize"}
 )
 
 type modifyUserRequest struct {
@@ -49,6 +51,9 @@ func getUser(_ http.ResponseWriter, r *http.Request) (*modifyUserRequest, error)
 
 	if req.What != "user" || req.Data == nil {
 		return nil, fberrors.ErrInvalidDataType
+	}
+	if req.Data.MaxUploadSize < 0 || req.Data.MaxUploadSize > settings.MaximumUploadSize {
+		return nil, fmt.Errorf("upload limit must be between 0 and %d bytes", settings.MaximumUploadSize)
 	}
 
 	return req, nil
@@ -188,13 +193,14 @@ var userPutHandler = withSelfOrAdmin(func(w http.ResponseWriter, r *http.Request
 
 	if d.settings.AuthMethod == auth.MethodJSONAuth {
 		var sensibleFields = map[string]struct{}{
-			"all":          {},
-			"username":     {},
-			"password":     {},
-			"scope":        {},
-			"lockPassword": {},
-			"commands":     {},
-			"perm":         {},
+			"all":           {},
+			"username":      {},
+			"password":      {},
+			"scope":         {},
+			"lockPassword":  {},
+			"commands":      {},
+			"perm":          {},
+			"maxuploadsize": {},
 		}
 
 		for _, field := range req.Which {
@@ -257,7 +263,7 @@ var userPutHandler = withSelfOrAdmin(func(w http.ResponseWriter, r *http.Request
 		}
 
 		for _, f := range NonModifiableFieldsForNonAdmin {
-			if !d.user.Perm.Admin && v == f {
+			if !d.user.Perm.Admin && strings.EqualFold(v, f) {
 				return http.StatusForbidden, nil
 			}
 		}

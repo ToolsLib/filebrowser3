@@ -15,6 +15,8 @@ const DefaultLogoutPage = "/login"
 const DefaultMinimumPasswordLength = 12
 const DefaultFileMode = 0640
 const DefaultDirMode = 0750
+const DefaultMaxUploadSize int64 = 10 << 30
+const MaximumUploadSize int64 = 1 << 50
 
 // AuthMethod describes an authentication method.
 type AuthMethod string
@@ -38,6 +40,7 @@ type Settings struct {
 	FileMode              fs.FileMode         `json:"fileMode"`
 	DirMode               fs.FileMode         `json:"dirMode"`
 	HideDotfiles          bool                `json:"hideDotfiles"`
+	MaxUploadSize         int64               `json:"maxUploadSize"`
 }
 
 // GetRules implements rules.Provider.
@@ -63,6 +66,7 @@ type Server struct {
 	AuthHook               string `json:"authHook"`
 	TokenExpirationTime    string `json:"tokenExpirationTime"`
 	MaxUploadSize          int64  `json:"maxUploadSize"`
+	MaxUploadSizeSource    string `json:"-"`
 	InsecureCookies        bool   `json:"insecureCookies"`
 	FollowExternalSymlinks bool   `json:"followExternalSymlinks"`
 

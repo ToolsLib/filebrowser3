@@ -17,7 +17,7 @@ const streamIdleTimeout = time.Minute
 
 func uploadSizeLimit(server *settings.Server) int64 {
 	if server.MaxUploadSize <= 0 {
-		return 10 << 30
+		return maxUploadLength // The authenticated handler applies the global/user policy.
 	}
 	if server.MaxUploadSize > maxUploadLength {
 		return maxUploadLength
@@ -164,6 +164,10 @@ func requestLimits(next http.Handler, server *settings.Server) http.Handler {
 				maximum = uploadSizeLimit(server)
 			}
 			if r.ContentLength > maximum {
+				if stream {
+					writeUploadLimitError(w, maximum)
+					return
+				}
 				http.Error(w, "413 Request Entity Too Large", http.StatusRequestEntityTooLarge)
 				return
 			}

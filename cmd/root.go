@@ -107,7 +107,7 @@ func addServerFlags(flags *pflag.FlagSet) {
 	flags.String("socket", "", "socket to listen to (cannot be used with address, port, cert nor key flags)")
 	flags.StringP("baseURL", "b", "", "base url")
 	flags.String("tokenExpirationTime", "2h", "user session timeout")
-	flags.Int64("maxUploadSize", 10<<30, "maximum file upload size in bytes (positive; default 10 GiB)")
+	flags.Int64("maxUploadSize", 0, "deployment upload ceiling in bytes (0: use global setting, default 10 GiB)")
 	flags.Bool("insecureCookies", false, "allow non-Secure session cookies for loopback HTTP development")
 	flags.Bool("disableThumbnails", false, "disable image thumbnails")
 	flags.Bool("disablePreviewResize", false, "disable resize of image previews")
@@ -158,7 +158,7 @@ The precedence of the configuration values are as follows:
 Also, if the database path doesn't exist, File Browser will enter into
 the quick setup mode and a new database will be bootstrapped and a new
 user created with the credentials from options "username" and "password".`,
-	RunE: withViperAndStore(func(_ *cobra.Command, _ []string, v *viper.Viper, st *store) error {
+	RunE: withViperAndStore(func(cmd *cobra.Command, _ []string, v *viper.Viper, st *store) error {
 		if !st.databaseExisted {
 			err := quickSetup(v, st.Storage)
 			if err != nil {
@@ -189,7 +189,7 @@ user created with the credentials from options "username" and "password".`,
 		}
 		defer uploadCache.Close()
 
-		server, err := getServerSettings(v, st.Storage)
+		server, err := getServerSettings(v, st.Storage, cmd.Flags())
 		if err != nil {
 			return err
 		}
@@ -288,7 +288,7 @@ user created with the credentials from options "username" and "password".`,
 	}, storeOptions{allowsNoDatabase: true}),
 }
 
-func getServerSettings(v *viper.Viper, st *storage.Storage) (*settings.Server, error) {
+func getServerSettings(v *viper.Viper, st *storage.Storage, flags *pflag.FlagSet) (*settings.Server, error) {
 	server, err := st.Settings.GetServer()
 	if err != nil {
 		return nil, err
@@ -341,8 +341,19 @@ func getServerSettings(v *viper.Viper, st *storage.Storage) (*settings.Server, e
 	if v.IsSet("tokenExpirationTime") {
 		server.TokenExpirationTime = v.GetString("tokenExpirationTime")
 	}
-	if v.IsSet("maxUploadSize") {
+	switch {
+	case v.IsSet("maxUploadSize"):
 		server.MaxUploadSize = v.GetInt64("maxUploadSize")
+		server.MaxUploadSizeSource = "configuration"
+		if value := os.Getenv("FB_MAX_UPLOAD_SIZE"); value != "" && !flags.Changed("maxUploadSize") {
+			server.MaxUploadSizeSource = "environment"
+		}
+	case server.MaxUploadSize == settings.DefaultMaxUploadSize:
+		// RC1 persisted its implicit 10 GiB default as a server setting.
+		// Keep that default through the global policy, which admins can now edit.
+		server.MaxUploadSize = 0
+	case server.MaxUploadSize > 0:
+		server.MaxUploadSizeSource = "configuration"
 	}
 	if v.IsSet("insecureCookies") {
 		server.InsecureCookies = v.GetBool("insecureCookies")
