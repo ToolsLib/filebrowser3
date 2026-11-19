@@ -62,7 +62,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "26.13.1"
-      - run: node --test tools/release/metadata.test.mjs frontend/scripts/bootstrap-pnpm.test.mjs
+      - run: node --test tools/release/metadata.test.mjs tools/release/finalize.test.mjs frontend/scripts/bootstrap-pnpm.test.mjs
   lint-backend:
     name: Backend lint
     runs-on: ubuntu-latest

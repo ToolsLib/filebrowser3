@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## File Browser 3 — 1.0.0
+
+First stable ToolsLib release, promoting the application tested in RC4. No application runtime or dependency changes since RC4.
+
+- Hardened filesystem confinement, authorization, persistent revocable sessions and staged/resumable uploads.
+- Global and per-user upload limits, clearer oversized-file errors and shared per-user download speed limits.
+- Standalone Shares management with editable passwords/expiration and stable public URLs.
+- A minimal file workspace with the New creation menu, keyboard/mobile support, bounded listings and deferred previews.
+- Standalone archives/checksums and multi-platform Docker images with SBOM/provenance. Publish `1.0.0`, `latest`, `1` and `1.0` from the same image digest after validation; add regression coverage for stable promotion and failure handling.
+
+Preserve file, database and configuration volumes when upgrading from an RC. Existing accounts, shares and upload/download policies are retained. Download budgets remain process-local; Redis download coordination is planned work. The runtime base and previously reviewed base-package advisory status are unchanged from RC4.
+
 ## File Browser 3 — 1.0.0-rc.4
 
 - Move New folder and New file from the sidebar into a keyboard-accessible New menu beside the current-folder heading.

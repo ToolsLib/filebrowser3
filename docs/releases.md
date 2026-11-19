@@ -2,20 +2,23 @@
 
 File Browser 3 is published from https://github.com/ToolsLib/filebrowser3.
 The public Docker Hub image is `toolslib/filebrowser3`.
-The current release candidate is **[v1.0.0-rc.4](https://github.com/ToolsLib/filebrowser3/releases/tag/v1.0.0-rc.4)**.
-It moves file/folder creation from the sidebar into a New menu beside the
-current-folder heading, with keyboard and mobile support. Releases
+The current stable release is **[v1.0.0](https://github.com/ToolsLib/filebrowser3/releases/tag/v1.0.0)**,
+based on the application tested in RC4. It includes configurable upload/download
+limits, editable share management and the New creation menu. Releases
 provide standalone archives, checksums and a multi-platform image; check the
 release page and linked Actions run for publication status.
 
 ## Release channels
 
-- GitHub tags use `v1.0.0-rc.4`; container tags omit `v`, for example
-  `toolslib/filebrowser3:1.0.0-rc.4`.
+- GitHub tags use `v1.0.0`; container tags omit `v`, for example
+  `toolslib/filebrowser3:1.0.0`.
 - Release candidates are GitHub prereleases and get only their exact version
   image tag. They never update `latest`, major or minor tags.
 - Stable releases get their exact image tag, then major/minor/`latest` aliases
-  after validation. Published Git tags and exact-version image tags must not
+  after validation. For 1.0.0, `1.0.0`, `1.0`, `1` and `latest` resolve to the
+  same multi-platform digest. Aliases advance with later stable releases;
+  pin an exact version or digest when upgrades need explicit review.
+  Published Git tags and exact-version image tags must not
   be moved to another commit. Use the published image digest for immutable
   deployments.
 
@@ -60,7 +63,7 @@ Before creating the tag:
    `LICENSE` and `NOTICE` in distributions. Scan the complete Git history for
    credentials; generated data and bootstrap secrets stay ignored.
 2. Run the normal checks from CONTRIBUTING.md and the release metadata tests:
-   `node --test tools/release/metadata.test.mjs`.
+   `node --test tools/release/metadata.test.mjs tools/release/finalize.test.mjs`.
 3. Build image candidates from `Dockerfile.source` with `VERSION` and `VCS_REF`
    build arguments. Native Node/Go build stages cross-compile the backend; the
    runtime base matches the target platform.
@@ -69,8 +72,8 @@ Before creating the tag:
 5. Create an annotated tag and push it, for example:
 
    ```text
-   git tag -a v1.0.0-rc.4 -m "File Browser 3 v1.0.0-rc.4"
-   git push origin v1.0.0-rc.4
+   git tag -a v1.0.0 -m "File Browser 3 v1.0.0"
+   git push origin v1.0.0
    ```
 
 The workflow repeats its required checks for the tagged commit. A failed run
@@ -89,7 +92,7 @@ Docker Compose and Node 26 are needed for the repository's secret helper; a Go
 compiler is not required when using `--image`:
 
 ```text
-node docker/local/prepare-secrets.mjs --image toolslib/filebrowser3:1.0.0-rc.4
+node docker/local/prepare-secrets.mjs --image toolslib/filebrowser3:1.0.0
 docker compose -f compose.release.yaml -f compose.loopback.yaml up -d --wait
 ```
 
@@ -101,7 +104,7 @@ proxy, omit `compose.loopback.yaml` so Secure cookies remain enabled.
 Optional Redis is supported with the same override:
 
 ```text
-node docker/local/prepare-secrets.mjs --redis --image toolslib/filebrowser3:1.0.0-rc.4
+node docker/local/prepare-secrets.mjs --redis --image toolslib/filebrowser3:1.0.0
 docker compose -f compose.release.yaml -f compose.redis.yaml up -d --wait
 ```
 
