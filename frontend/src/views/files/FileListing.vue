@@ -137,30 +137,36 @@
     </div>
     <template v-else>
       <div class="workspace-heading">
-        <div>
+        <div class="folder-heading">
           <h1>{{ currentFolder }}</h1>
           <p>
             {{ t("ui.itemCount", totalItems) }}
           </p>
         </div>
         <div
-          v-if="fileStore.selectedCount"
-          class="selection-summary"
-          role="status"
+          class="folder-actions"
+          v-if="fileStore.selectedCount || partial || userCanCreate"
         >
-          {{ t("prompts.filesSelected", fileStore.selectedCount) }}
-          <button
-            class="action"
-            @click="fileStore.selected = []"
-            :aria-label="t('buttons.clear')"
-            :title="t('buttons.clear')"
+          <div
+            v-if="fileStore.selectedCount"
+            class="selection-summary"
+            role="status"
           >
-            <i class="material-icons">close</i>
+            {{ t("prompts.filesSelected", fileStore.selectedCount) }}
+            <button
+              class="action"
+              @click="fileStore.selected = []"
+              :aria-label="t('buttons.clear')"
+              :title="t('buttons.clear')"
+            >
+              <i class="material-icons">close</i>
+            </button>
+          </div>
+          <button v-if="partial" class="text-button" @click="selectFolder">
+            {{ t("ui.selectFolder") }}
           </button>
+          <NewMenu v-if="userCanCreate" />
         </div>
-        <button v-if="partial" class="text-button" @click="selectFolder">
-          {{ t("ui.selectFolder") }}
-        </button>
       </div>
       <Pagination
         :page="currentPage"
@@ -407,6 +413,7 @@ import Search from "@/components/Search.vue";
 import Item from "@/components/files/ListingItem.vue";
 import ContextMenu from "@/components/ContextMenu.vue";
 import Pagination from "@/components/Pagination.vue";
+import NewMenu from "@/components/files/NewMenu.vue";
 import { sortResources } from "@/utils/sorting";
 import {
   computed,
@@ -1110,6 +1117,19 @@ const handleEmptyAreaClick = (e: MouseEvent) => {
 };
 </script>
 <style scoped>
+.folder-heading {
+  min-width: 0;
+  flex: 1;
+}
+.folder-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  max-width: 100%;
+  margin-inline-start: auto;
+}
 #listing {
   min-height: calc(100vh - 8rem);
 }

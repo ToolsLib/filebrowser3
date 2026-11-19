@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Move New folder and New file from the sidebar into a keyboard-accessible New menu beside the current-folder heading.
+
 ## File Browser 3 — 1.0.0-rc.3
 
 - Move share management to a standalone Shares sidebar page; keep old settings links working through a redirect.
