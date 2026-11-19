@@ -99,11 +99,6 @@ i.spin {
 .sidebar .account-action {
   margin-bottom: 20px;
 }
-.sidebar-create {
-  border-block: 1px solid var(--divider);
-  padding-block: 14px;
-  margin-block: 16px;
-}
 .sidebar #logout {
   margin-top: 12px;
 }

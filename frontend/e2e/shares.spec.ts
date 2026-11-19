@@ -191,6 +191,7 @@ test("ordinary users manage their own shares and lose access when sharing is rev
     perm: {
       ...configuration.defaults.perm,
       admin: false,
+      create: false,
       share: true,
       download: true,
     },
@@ -217,6 +218,9 @@ test("ordinary users manage their own shares and lose access when sharing is rev
   try {
     const userPage = await context.newPage();
     const userHeaders = await login(userPage, data.username, data.password);
+    await expect(userPage.locator(".workspace-heading .new-menu")).toHaveCount(
+      0
+    );
     const own = await (
       await userPage.request.post("api/share/review.md", {
         headers: userHeaders,

@@ -39,11 +39,14 @@ test("minimal workspace: keyboard, dialogs, shares, responsive layouts and theme
     await page.locator("#view-button").click();
   await capture(page, { path: path.join(screenshots, "02-files-grid.png") });
 
-  const newFolder = page
-    .locator(".sidebar")
-    .getByRole("button", { name: "New folder", exact: true });
+  const newButton = page
+    .locator(".workspace-heading")
+    .getByRole("button", { name: "New", exact: true });
   for (let i = 0; i < 3; i++) {
-    await newFolder.click();
+    await newButton.click();
+    await page
+      .getByRole("menuitem", { name: "New folder", exact: true })
+      .click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
     await expect(dialog.locator("#focus-prompt")).toBeFocused();
@@ -59,7 +62,7 @@ test("minimal workspace: keyboard, dialogs, shares, responsive layouts and theme
       });
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
-    await expect(newFolder).toBeFocused();
+    await expect(newButton).toBeFocused();
   }
 
   const file = page.locator('#listing .item[aria-label="Getting started.txt"]');
