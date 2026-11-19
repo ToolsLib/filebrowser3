@@ -11,18 +11,18 @@ This fork includes subsequent security fixes, dependency updates, a revised Vue 
 
 ## Release candidate
 
-The current candidate is **[v1.0.0-rc.3](https://github.com/ToolsLib/filebrowser3/releases/tag/v1.0.0-rc.3)**. It adds shared per-user download speed limits, a dedicated Shares sidebar page, editable share passwords/expiration, and a fix for single-file archives. Check [Releases](https://github.com/ToolsLib/filebrowser3/releases) for publication status and artifacts.
+The current candidate is **[v1.0.0-rc.4](https://github.com/ToolsLib/filebrowser3/releases/tag/v1.0.0-rc.4)**. It moves New folder and New file into a keyboard-accessible New menu beside the current-folder heading, keeping the sidebar focused on navigation. Check [Releases](https://github.com/ToolsLib/filebrowser3/releases) for publication status and artifacts.
 
-Public image: [toolslib/filebrowser3:1.0.0-rc.3](https://hub.docker.com/r/toolslib/filebrowser3/tags), with linux/amd64 and linux/arm64 variants. Candidate tags never update `latest`.
+Public image: [toolslib/filebrowser3:1.0.0-rc.4](https://hub.docker.com/r/toolslib/filebrowser3/tags), with linux/amd64 and linux/arm64 variants. Candidate tags never update `latest`.
 
 ## Try locally
 
 Use Docker Compose and Node 26:
 
 ```text
-git clone --branch v1.0.0-rc.3 --depth 1 https://github.com/ToolsLib/filebrowser3.git
+git clone --branch v1.0.0-rc.4 --depth 1 https://github.com/ToolsLib/filebrowser3.git
 cd filebrowser3
-node docker/local/prepare-secrets.mjs --image toolslib/filebrowser3:1.0.0-rc.3
+node docker/local/prepare-secrets.mjs --image toolslib/filebrowser3:1.0.0-rc.4
 docker compose -f compose.release.yaml -f compose.loopback.yaml up -d --wait
 ```
 

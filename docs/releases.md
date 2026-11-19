@@ -2,16 +2,16 @@
 
 File Browser 3 is published from https://github.com/ToolsLib/filebrowser3.
 The public Docker Hub image is `toolslib/filebrowser3`.
-The current release candidate is **[v1.0.0-rc.3](https://github.com/ToolsLib/filebrowser3/releases/tag/v1.0.0-rc.3)**.
-It adds shared per-user download speed limits, a dedicated Shares page, editable
-share passwords/expiration and a single-file archive fix. Releases
+The current release candidate is **[v1.0.0-rc.4](https://github.com/ToolsLib/filebrowser3/releases/tag/v1.0.0-rc.4)**.
+It moves file/folder creation from the sidebar into a New menu beside the
+current-folder heading, with keyboard and mobile support. Releases
 provide standalone archives, checksums and a multi-platform image; check the
 release page and linked Actions run for publication status.
 
 ## Release channels
 
-- GitHub tags use `v1.0.0-rc.3`; container tags omit `v`, for example
-  `toolslib/filebrowser3:1.0.0-rc.3`.
+- GitHub tags use `v1.0.0-rc.4`; container tags omit `v`, for example
+  `toolslib/filebrowser3:1.0.0-rc.4`.
 - Release candidates are GitHub prereleases and get only their exact version
   image tag. They never update `latest`, major or minor tags.
 - Stable releases get their exact image tag, then major/minor/`latest` aliases
@@ -69,8 +69,8 @@ Before creating the tag:
 5. Create an annotated tag and push it, for example:
 
    ```text
-   git tag -a v1.0.0-rc.3 -m "File Browser 3 v1.0.0-rc.3"
-   git push origin v1.0.0-rc.3
+   git tag -a v1.0.0-rc.4 -m "File Browser 3 v1.0.0-rc.4"
+   git push origin v1.0.0-rc.4
    ```
 
 The workflow repeats its required checks for the tagged commit. A failed run
@@ -78,13 +78,18 @@ does not promote stable aliases. Fix code with a new candidate tag; do not
 retarget a published release. If a publishing step fails after artifacts were
 uploaded, inspect the existing draft/tag/image before rerunning.
 
+Let the workflow publish its draft before editing custom release notes. Preserve
+the exact `tag_name` explicitly on API updates and verify the tag association
+afterward. If finalization needs recovery, reuse the verified release ID and
+published image digest; do not rebuild or replace a published exact-version tag.
+
 ## Installing an image release
 
 Docker Compose and Node 26 are needed for the repository's secret helper; a Go
 compiler is not required when using `--image`:
 
 ```text
-node docker/local/prepare-secrets.mjs --image toolslib/filebrowser3:1.0.0-rc.3
+node docker/local/prepare-secrets.mjs --image toolslib/filebrowser3:1.0.0-rc.4
 docker compose -f compose.release.yaml -f compose.loopback.yaml up -d --wait
 ```
 
@@ -96,7 +101,7 @@ proxy, omit `compose.loopback.yaml` so Secure cookies remain enabled.
 Optional Redis is supported with the same override:
 
 ```text
-node docker/local/prepare-secrets.mjs --redis --image toolslib/filebrowser3:1.0.0-rc.3
+node docker/local/prepare-secrets.mjs --redis --image toolslib/filebrowser3:1.0.0-rc.4
 docker compose -f compose.release.yaml -f compose.redis.yaml up -d --wait
 ```
 
