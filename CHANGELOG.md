@@ -2,7 +2,12 @@
 
 ## Unreleased
 
+## File Browser 3 — 1.0.0-rc.4
+
 - Move New folder and New file from the sidebar into a keyboard-accessible New menu beside the current-folder heading.
+- Reuse existing creation dialogs and permissions, with keyboard navigation, click-away dismissal and focus restoration. Keep creation available in empty folders and on mobile.
+
+Preserve file, database and configuration volumes when upgrading. Existing shares, accounts and upload/download policies are retained. The runtime base and dependencies are unchanged from RC3.
 
 ## File Browser 3 — 1.0.0-rc.3
 
