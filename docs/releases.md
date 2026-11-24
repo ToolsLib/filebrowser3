@@ -37,8 +37,13 @@ The repository needs:
 
 The `v*` tag workflow validates version syntax and missing publishing credentials.
 It requires frontend unit/browser checks, backend lint and Windows/Linux tests,
-Go vulnerability checks, Redis integration, both source Compose configurations,
+Redis integration, both source Compose configurations,
 build metadata checks and release tag-policy tests.
+
+Vulnerability checks run independently through **Actions → Vulnerability checks
+(optional) → Run workflow**. The manual workflow scans Go on Linux/Windows and
+audits the full frontend dependency tree. It is not a merge or publication gate;
+findings remain visible as failures in that separate workflow.
 
 On the exact tag commit, it builds linux/amd64 and linux/arm64 candidate images,
 checks embedded version/revision metadata, and tests each architecture in both

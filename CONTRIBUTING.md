@@ -19,7 +19,7 @@ We use [Taskfile](https://taskfile.dev/) to manage the different processes (buil
 
 ## Build
 
-Go 1.27.4 is the minimum supported version and the pinned compiler for CI and container builds. CI runs backend tests and vulnerability scans on Linux and Windows; Linux tests include the race detector. `GOTOOLCHAIN=local` keeps the selected compiler explicit and rejects older compilers. Node 26.13.1 and the pnpm version pinned in `frontend/package.json` build the assets.
+Go 1.27.4 is the minimum supported version and the pinned compiler for CI and container builds. Main CI runs backend tests on Linux and Windows; Linux tests include the race detector. Vulnerability scans are available separately in the optional manual workflow. `GOTOOLCHAIN=local` keeps the selected compiler explicit and rejects older compilers. Node 26.13.1 and the pnpm version pinned in `frontend/package.json` build the assets.
 
 With Node 26.13.1 and npm on your PATH, install the project's pinned pnpm once:
 
@@ -37,7 +37,9 @@ task build
 
 Without Task, run `pnpm install --frozen-lockfile` and `pnpm build` in `frontend`, then `go run ./tools/build` in the repository root. The helper emits `filebrowser.exe` on Windows and `filebrowser` on other platforms. An exact version tag supplies release metadata; otherwise the version is `0.0.0-dev+<commit>`, with `.dirty` when appropriate. A source archive without Git reports `0.0.0-dev+unknown`. It never needs a tag or remote to build locally. Container/release builds can supply paired `-version` and `-commit` overrides; see [releases](docs/releases.md).
 
-Frontend/unit/browser checks are documented in [frontend maintenance](docs/frontend-maintenance.md). Backend checks are `go test ./...`, `go vet ./...`, and `golangci-lint run --timeout 5m` (v2.15.0). Linux also runs the race detector. `govulncheck` v1.9.0 and full-tree `pnpm audit` are release prerequisites. Vulnerabilities must be fixed or receive a specific, reviewed applicability decision; do not disable checks to ship an update.
+Frontend/unit/browser checks are documented in [frontend maintenance](docs/frontend-maintenance.md). Backend checks are `go test ./...`, `go vet ./...`, and `golangci-lint run --timeout 5m` (v2.15.0). Linux also runs the race detector.
+
+Dependency vulnerability checks are optional and do not block main CI, merges or release publication. To run them, open **Actions → Vulnerability checks (optional) → Run workflow** and select the branch or tag to inspect. This manual-only workflow runs `govulncheck` v1.9.0 on Linux/Windows and a full-tree `pnpm audit`; findings fail their scan job and remain visible in that workflow. They can also be run locally with `govulncheck ./...` at the repository root and `pnpm audit` in `frontend`. Weekly Dependabot update PRs remain enabled.
 
 ## Development
 
@@ -100,7 +102,7 @@ task docs:cli:generate
 
 ## Release
 
-No release tags or remote are created by normal builds. After an operator configures the intended remote and explicitly creates a version tag, the GitHub Actions release job waits for frontend/browser tests, backend lint, Windows/Linux tests, Redis integration, both Compose deployment tests, vulnerability scans and a local build. It publishes binary archives and checksums to that repository using a job-scoped contents-write token. Inherited upstream Docker Hub and Homebrew publishing targets were removed. `Dockerfile.source` is the only Dockerfile; Compose defaults to app-only, with Redis enabled by the explicit `compose.redis.yaml` override. See [deployment](docs/deployment.md) for commands and `node docker/local/smoke-test.mjs` for both runtime checks.
+No release tags or remote are created by normal builds. After an operator configures the intended remote and explicitly creates a version tag, the GitHub Actions release job waits for frontend/browser tests, backend lint, Windows/Linux tests, Redis integration, both Compose deployment tests, release metadata tests and a local build. Optional vulnerability checks run independently. It publishes binary archives and checksums to that repository using a job-scoped contents-write token. Inherited upstream Docker Hub and Homebrew publishing targets were removed. `Dockerfile.source` is the only Dockerfile; Compose defaults to app-only, with Redis enabled by the explicit `compose.redis.yaml` override. See [deployment](docs/deployment.md) for commands and `node docker/local/smoke-test.mjs` for both runtime checks.
 
 GoReleaser is pinned to v2.20.2. Its full `check`/release validation requires a configured SCM remote. The tag workflow creates draft archives and checksums, publishes the tested multi-platform image with SBOM/provenance attestations, and publishes the GitHub release after attaching the immutable image digest. Release candidates use their exact version tag without changing stable aliases. See [releases](docs/releases.md).
 
