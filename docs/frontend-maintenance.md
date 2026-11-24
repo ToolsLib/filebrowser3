@@ -24,9 +24,10 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
-pnpm audit
 pnpm exec playwright install chromium
 pnpm exec playwright test
 ```
 
 Build the Go binary in the repository root after the frontend build and before Playwright (`go build -o filebrowser.exe .` on Windows, `go build -o filebrowser .` on Linux). Browser tests start a disposable loopback server under a nested base path and use fixture-only credentials/database. Alongside editor, upload, preview and CSP regressions, they check keyboard/dialog behavior, mobile/tablet layouts, themes, right-to-left settings, public sharing and drag-and-drop. UI screenshots are saved under `build/ui-screenshots`. Test output is ignored by Git.
+
+For an optional dependency scan, run `pnpm audit` from `frontend`, or open **Actions → Vulnerability checks (optional) → Run workflow**. The manual workflow also scans Go on Linux/Windows. Audits report findings independently and are not part of the main CI or release prerequisites.

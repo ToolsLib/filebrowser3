@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Move Go vulnerability scans and the frontend dependency audit out of main CI/release gates into a separate manual-only Vulnerability checks (optional) workflow.
+
 ## File Browser 3 — 1.0.0
 
 First stable ToolsLib release, promoting the application tested in RC4. No application runtime or dependency changes since RC4.
