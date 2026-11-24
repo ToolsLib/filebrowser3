@@ -1,4 +1,8 @@
 {
+  "shell": {
+    "cancelled": "Command cancelled.",
+    "exitCode": "Command exited with status {code}."
+  },
   "shares": {
     "description": "Manage shared links, passwords and expiration.",
     "refresh": "Refresh",

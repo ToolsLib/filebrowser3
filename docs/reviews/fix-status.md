@@ -6,6 +6,8 @@ Toolchain update, 17 November 2026: Go 1.27.4 is now the minimum supported versi
 
 CI policy update, 24 November 2026: Go vulnerability scans and the frontend dependency audit now run only through the separate **Vulnerability checks (optional)** manual workflow. Main CI and release publication retain their tests, lint, build and Compose gates; vulnerability checks are no longer required merge/publication gates. Earlier dated scan results remain historical validation evidence.
 
+Advisory review, 24 November 2026: [GO-2026-6278 assessment](2026-11-24-websocket-mask-advisory.md) explains Gorilla's affected client masking and the application's former server-only usage. The local follow-up [migrates command execution to HTTP streaming and removes Gorilla WebSocket](2026-11-24-command-http-streaming.md), including cancellation and real reverse-proxy checks. Published releases remain unchanged.
+
 All 28 findings from the [project review](2026-11-16-project-review.md) were accepted as to fix and are now resolved. Validation evidence and local commits are recorded below. No remote or release tag is configured. See the [completion report](2026-11-16-completion-report.md) for results, migration notes and verification limits.
 
 Status values: **To fix**, **In progress**, **Fixed**. A finding is fixed only after its implementation or verified disposition and appropriate checks are recorded.

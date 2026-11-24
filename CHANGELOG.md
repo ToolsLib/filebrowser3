@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Replace the command console's WebSocket transport with authenticated HTTP streaming and remove `github.com/gorilla/websocket`, resolving GO-2026-6278 by removing the dependency.
+- Stream partial output and exit status, add Cancel and navigation/close cancellation, bound retained console output, and stop command process groups/jobs on abort or timeout. Flush events and heartbeats through reverse proxies; document buffering requirements and the POST API migration.
 - Move Go vulnerability scans and the frontend dependency audit out of main CI/release gates into a separate manual-only Vulnerability checks (optional) workflow.
 
 ## File Browser 3 — 1.0.0
