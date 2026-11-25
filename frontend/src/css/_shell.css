@@ -84,3 +84,9 @@ body.rtl .shell-content {
   width: 100%;
   color: var(--textSecondary);
 }
+.shell__cancel {
+  position: absolute;
+  top: 0.75em;
+  right: 1em;
+  z-index: 1;
+}

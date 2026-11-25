@@ -3,6 +3,7 @@
     class="shell"
     :class="{ ['shell--hidden']: !showShell }"
     :style="{ height: `${this.shellHeight}em`, direction: 'ltr' }"
+    @keydown.esc="stopCommand"
   >
     <div
       @pointerdown="startDrag()"
@@ -10,6 +11,14 @@
       class="shell__divider"
       :style="this.shellDrag ? { background: `${checkTheme()}` } : ''"
     ></div>
+    <button
+      v-if="!canInput"
+      type="button"
+      class="shell__cancel button button--flat"
+      @click="stopCommand"
+    >
+      {{ $t("buttons.cancel") }}
+    </button>
     <div @click="focus" class="shell__content" ref="scrollable">
       <div v-for="(c, index) in content" :key="index" class="shell__result">
         <div class="shell__prompt">
@@ -45,6 +54,7 @@
 </template>
 
 <script>
+import { reactive } from "vue";
 import { mapState, mapActions } from "pinia";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
@@ -74,12 +84,25 @@ export default {
     shellDrag: false,
     shellHeight: 25,
     fontsize: parseFloat(getComputedStyle(document.documentElement).fontSize),
+    commandController: null,
+    disposed: false,
   }),
+  watch: {
+    showShell(visible) {
+      if (!visible) this.stopCommand();
+    },
+    "$route.path"() {
+      this.stopCommand();
+    },
+  },
   mounted() {
     window.addEventListener("resize", this.resize);
   },
   beforeUnmount() {
+    this.disposed = true;
+    this.stopCommand();
     window.removeEventListener("resize", this.resize);
+    this.stopDrag();
   },
   methods: {
     ...mapActions(useLayoutStore, ["toggleShell"]),
@@ -121,7 +144,8 @@ export default {
       }
     }, 32),
     scroll: function () {
-      this.$refs.scrollable.scrollTop = this.$refs.scrollable.scrollHeight;
+      const container = this.$refs.scrollable;
+      if (container) container.scrollTop = container.scrollHeight;
     },
     focus: function () {
       this.$refs.input.focus();
@@ -141,7 +165,11 @@ export default {
         this.$refs.input.innerText = "";
       }
     },
-    submit: function (event) {
+    stopCommand() {
+      this.commandController?.abort();
+    },
+    submit: async function (event) {
+      if (!this.canInput) return;
       const cmd = event.target.innerText.trim();
 
       if (cmd === "") {
@@ -163,31 +191,36 @@ export default {
       this.canInput = false;
       event.target.innerHTML = "";
 
-      const results = {
+      const results = reactive({
         text: `${cmd}\n\n`,
-      };
+      });
 
       this.history.push(cmd);
       this.historyPos = this.history.length;
       this.content.push(results);
-
-      commands(
-        this.path,
-        cmd,
-        (event) => {
-          results.text += `${event.data}\n`;
-          this.scroll();
-        },
-        () => {
-          results.text = results.text
-
-            .replace(/\u001b\[[0-9;]+m/g, "") // Filter ANSI color for now
-            .trimEnd();
-          this.canInput = true;
-          this.$refs.input.focus();
+      const controller = new AbortController();
+      this.commandController = controller;
+      const append = (text) => {
+        // Bound retained output even when a command writes continuously.
+        results.text = (results.text + text).slice(-1024 * 1024);
+        this.scroll();
+      };
+      try {
+        const code = await commands(this.path, cmd, append, controller.signal);
+        if (code !== 0) append(`\n${this.$t("shell.exitCode", { code })}\n`);
+      } catch (error) {
+        append(
+          `\n${controller.signal.aborted ? this.$t("shell.cancelled") : error.message}\n`
+        );
+      } finally {
+        this.commandController = null;
+        results.text = results.text.replace(/\u001b\[[0-9;]+m/g, "").trimEnd();
+        this.canInput = true;
+        if (!this.disposed) {
+          this.$refs.input?.focus();
           this.scroll();
         }
-      );
+      }
     },
   },
 };

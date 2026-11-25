@@ -86,8 +86,11 @@ func (w *idleWriter) Write(body []byte) (int, error) {
 	return w.ResponseWriter.Write(body)
 }
 func (w *idleWriter) Flush() {
+	_ = w.FlushError()
+}
+func (w *idleWriter) FlushError() error {
 	_ = w.controller.SetWriteDeadline(time.Now().Add(streamIdleTimeout))
-	_ = w.controller.Flush()
+	return w.controller.Flush()
 }
 
 func requestLimits(next http.Handler, server *settings.Server) http.Handler {
@@ -180,11 +183,6 @@ func requestLimits(next http.Handler, server *settings.Server) http.Handler {
 				}
 				r.Body = io.NopCloser(bytes.NewReader(body))
 			}
-		}
-		// The WebSocket handler manages its own deadlines and needs Hijacker.
-		if strings.HasPrefix(r.URL.Path, "/api/command") {
-			next.ServeHTTP(w, r)
-			return
 		}
 		next.ServeHTTP(&idleWriter{ResponseWriter: w, controller: controller}, r)
 	})

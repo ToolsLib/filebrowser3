@@ -42,11 +42,41 @@ function zip(entries) {
   return Buffer.concat([...bodies, table, end]);
 }
 
-const parent = path.resolve("test-results");
+const parent = path.resolve(process.env.FB_E2E_RESULTS || "test-results");
+const port = process.env.FB_E2E_PORT || "18089";
 await mkdir(parent, { recursive: true });
 const dir = await mkdtemp(path.join(parent, "server-"));
 const root = path.join(dir, "files");
 await mkdir(root);
+const commandHelper = path.join(dir, "command-helper.mjs");
+await writeFile(
+  commandHelper,
+  `import { existsSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+const [mode, marker] = process.argv.slice(2);
+if (mode === "child") {
+  process.stdout.write("child-ready\\n");
+  setTimeout(() => { writeFileSync(marker, "survived"); process.exit(0); }, 1500);
+} else if (mode === "tree") {
+  const child = spawn(process.execPath, [import.meta.filename, "child", marker], { stdio: "inherit", windowsHide: true });
+  child.on("exit", () => process.exit(0));
+} else if (mode === "wait") {
+  process.stdout.write("first 🌍 partial");
+  const timer = setInterval(() => {
+    if (existsSync(marker)) { clearInterval(timer); process.stdout.write(" second\\n"); }
+  }, 10);
+} else if (mode === "exit") { process.stdout.write("failure output\\n"); process.exitCode = 7; }
+else { process.exitCode = 2; }
+`
+);
+await writeFile(
+  path.join(parent, process.env.FB_E2E_FIXTURE || "command-fixture.json"),
+  JSON.stringify({
+    node: process.execPath,
+    helper: commandHelper,
+    directory: dir,
+  })
+);
 await writeFile(
   path.join(root, "encoded-preview.csv"),
   Buffer.from("name;note\ncafé;value\n", "latin1")
@@ -151,10 +181,13 @@ const server = spawn(
     "--password",
     password,
     "--port",
-    "18089",
+    port,
+    "--address",
+    process.env.FB_E2E_ADDRESS || "127.0.0.1",
     "--insecureCookies",
     "--baseURL",
     "/test-app",
+    "--disableExec=false",
   ],
   {
     stdio: "inherit",
